@@ -1,0 +1,13 @@
+streamlit
+yfinance>=0.2.66
+pandas
+numpy
+scikit-learn
+xgboost
+statsmodels
+prophet
+nltk
+textblob
+plotly
+ta
+gpt4all
