@@ -10,4 +10,6 @@ nltk
 textblob
 plotly
 ta
-gpt4all
+llama-cpp-python
+arch
+pykalman

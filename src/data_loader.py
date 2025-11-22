@@ -34,16 +34,28 @@ class DataLoader:
     def fetch_news(ticker: str) -> List[Dict]:
         """
         Fetches recent news for the ticker and normalizes the output.
+        Filters for reliable financial news sources.
         """
         try:
             logger.info(f"Fetching news for {ticker}")
             t = yf.Ticker(ticker)
             raw_news = t.news
             
+            # Reliable sources whitelist (domains/publishers)
+            RELIABLE_SOURCES = [
+                "Reuters", "Bloomberg", "CNBC", "Wall Street Journal", 
+                "Yahoo Finance", "Financial Times", "Forbes", "MarketWatch",
+                "Investing.com", "The Motley Fool", "Barron's", "Benzinga"
+            ]
+            
             normalized_news = []
             for item in raw_news:
                 # Handle different yfinance news structures
                 content = item.get('content', {})
+                publisher = content.get('provider', {}).get('displayName', 'Unknown')
+                
+                # Filter for reliable sources (loose match)
+                is_reliable = any(src.lower() in publisher.lower() for src in RELIABLE_SOURCES)
                 
                 # Extract Title
                 title = item.get('title') or content.get('title', 'No Title')
@@ -57,14 +69,21 @@ class DataLoader:
                     else:
                         link = canonical
                 
-                normalized_news.append({
+                news_item = {
                     'title': title,
                     'link': link or '#',
-                    'publisher': content.get('provider', {}).get('displayName', 'Unknown'),
-                    'published': content.get('pubDate')
-                })
+                    'publisher': publisher,
+                    'published': content.get('pubDate'),
+                    'is_reliable': is_reliable
+                }
                 
-            return normalized_news
+                normalized_news.append(news_item)
+            
+            # Sort: Reliable sources first, then by date
+            normalized_news.sort(key=lambda x: (not x['is_reliable'], x.get('published', '')))
+            
+            # Return top 15 (increased from default)
+            return normalized_news[:15]
         except Exception as e:
             logger.error(f"Error fetching news for {ticker}: {e}")
             return []

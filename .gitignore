@@ -14,6 +14,7 @@ pip-delete-this-directory.txt
 models/
 data/
 logs/
+llm_debug.log
 
 # PyInstaller
 build/

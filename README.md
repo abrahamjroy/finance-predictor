@@ -7,10 +7,10 @@ A comprehensive financial prediction application built with Python and Streamlit
 - **Multi-Algorithm Forecasting**: 10+ prediction models including Statistical (SMA, EMA, ARIMA, Holt-Winters), Machine Learning (Linear Regression, Random Forest, XGBoost, SVR), and Technical Indicators (RSI, Bollinger Bands)
 - **Real-time Data**: Fetches live stock, crypto, and forex data via `yfinance`
 - **Sentiment Analysis**: NLTK VADER-based headline sentiment scoring
-- **AI Market Analyst**: Local LLM (Phi-3 Mini via GPT4All) for GPU-accelerated market analysis
+- **AI Market Analyst**: Local LLM (Phi-4 Mini Reasoning via llama-cpp-python) with automatic GPU acceleration
 - **Interactive Visualizations**: Plotly-powered charts with color-coded predictions
 - **Ticker Tapes**: Scrolling dot-matrix style tickers for indices and news
-- **GPU Optimized**: CUDA acceleration for XGBoost and LLM inference (RTX 4070)
+- **GPU Optimized**: Automatic NVIDIA CUDA acceleration for XGBoost and LLM inference
 
 ## Installation
 
