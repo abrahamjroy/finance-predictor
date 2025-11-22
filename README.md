@@ -1,5 +1,8 @@
 # Finance Predictor Pro
 
+<img width="1899" height="1008" alt="image" src="https://github.com/user-attachments/assets/b861818a-8d8b-4262-93b4-319b53870d61" />
+
+
 A comprehensive financial prediction application built with Python and Streamlit, featuring 10+ forecasting algorithms, sentiment analysis, and local LLM integration for AI-powered market insights.
 
 ## Features
