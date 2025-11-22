@@ -81,4 +81,4 @@ MIT
 
 ## Author
 
-Built with ❤️ for financial analysis enthusiasts
+Built with ❤️ for financial analysis testing and app building by Abraham Jeevan Roy
