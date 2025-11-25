@@ -4,6 +4,7 @@
 
 
 A comprehensive financial prediction application built with Python and Streamlit, featuring 10+ forecasting algorithms, sentiment analysis, and local LLM integration for AI-powered market insights.
+This is designed as a progressive Web App using streamlit, For an experimental Native App version, Try the Native-ui branch (https://github.com/abrahamjroy/finance-predictor/tree/native-ui)
 
 ## Features
 
