@@ -6,7 +6,7 @@ import numpy as np
 from datetime import datetime
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QLineEdit, QComboBox, 
-                             QSlider, QPushButton, QFrame, QMessageBox, QTextEdit, QGraphicsDropShadowEffect)
+                             QSlider, QPushButton, QFrame, QMessageBox, QTextEdit, QGraphicsDropShadowEffect, QScrollArea, QSizePolicy)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QPainter, QColor, QFont, QPalette, QLinearGradient, QPen, QBrush
 
@@ -133,6 +133,108 @@ class TickerTape(QWidget):
             x += text_width + 50
         if x < 0:
             self.offset = self.width()
+
+    def resizeEvent(self, event):
+        # Reset offset on resize to avoid disappearing text
+        if self.offset < -self.width():
+            self.offset = self.width()
+        super().resizeEvent(event)
+
+class CustomTitleBar(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedHeight(40)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(15, 0, 15, 0)
+        layout.setSpacing(8)
+        
+        # Window Controls (MacOS Style - Left Side)
+        # Using fixed size and explicit background colors to ensure visibility
+        self.btn_close = QPushButton()
+        self.btn_close.setFixedSize(12, 12)
+        self.btn_close.setStyleSheet("""
+            QPushButton {
+                background-color: #FF5F57;
+                border: none;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background-color: #FF3B30;
+            }
+        """)
+        self.btn_close.setToolTip("Close")
+        
+        self.btn_min = QPushButton()
+        self.btn_min.setFixedSize(12, 12)
+        self.btn_min.setStyleSheet("""
+            QPushButton {
+                background-color: #FFBD2E;
+                border: none;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background-color: #FF9500;
+            }
+        """)
+        self.btn_min.setToolTip("Minimize")
+        
+        self.btn_max = QPushButton()
+        self.btn_max.setFixedSize(12, 12)
+        self.btn_max.setStyleSheet("""
+            QPushButton {
+                background-color: #28C93F;
+                border: none;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background-color: #007AFF;
+            }
+        """)
+        self.btn_max.setToolTip("Maximize")
+        
+        layout.addWidget(self.btn_close)
+        layout.addWidget(self.btn_min)
+        layout.addWidget(self.btn_max)
+        
+        # Title (Centered)
+        layout.addStretch()
+        self.title_label = QLabel("Finance Predictor Pro")
+        self.title_label.setFont(QFont("SF Pro Display", 12, QFont.Weight.Bold))
+        self.title_label.setStyleSheet("color: rgba(255, 255, 255, 0.9);")
+        layout.addWidget(self.title_label)
+        layout.addStretch()
+        
+        # Spacer to balance the left controls
+        # 3 buttons * 12px + 2 spaces * 8px = 52px approx width to balance
+        dummy_spacer = QWidget()
+        dummy_spacer.setFixedWidth(52)
+        layout.addWidget(dummy_spacer)
+        
+        # Connect signals
+        self.btn_min.clicked.connect(self.window().showMinimized)
+        self.btn_max.clicked.connect(self.toggle_max)
+        self.btn_close.clicked.connect(self.window().close)
+        
+        self.start_pos = None
+
+    def toggle_max(self):
+        if self.window().isMaximized():
+            self.window().showNormal()
+        else:
+            self.window().showMaximized()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.start_pos = event.globalPosition().toPoint()
+
+    def mouseMoveEvent(self, event):
+        if self.start_pos:
+            delta = event.globalPosition().toPoint() - self.start_pos
+            self.window().move(self.window().pos() + delta)
+            self.start_pos = event.globalPosition().toPoint()
+
+    def mouseReleaseEvent(self, event):
+        self.start_pos = None
 class AIThread(QThread):
     analysis_ready = pyqtSignal(str)
     
@@ -159,7 +261,10 @@ class AIThread(QThread):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Finance Predictor Pro")
+    def __init__(self):
+        super().__init__()
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.resize(1600, 1000)
         
         # State
@@ -197,10 +302,17 @@ class MainWindow(QMainWindow):
 
     def setup_ui(self):
         main_widget = QWidget()
+        main_widget.setObjectName("MainWidget")
         self.setCentralWidget(main_widget)
+        
+        # Main Layout
         layout = QVBoxLayout(main_widget)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
+        
+        # Custom Title Bar
+        self.title_bar = CustomTitleBar(self)
+        layout.addWidget(self.title_bar)
         
         # Top Ticker
         self.top_ticker = TickerTape()
@@ -233,26 +345,50 @@ class MainWindow(QMainWindow):
         self.plot_widget.addLegend()
         chart_panel_layout.addWidget(self.plot_widget)
         
-        content_layout.addWidget(chart_panel, stretch=2)
+        content_layout.addWidget(chart_panel, stretch=1)
         
-        # Sidebar (Material Card)
-        sidebar = MaterialCard(elevation=2)
-        sidebar.setFixedWidth(380)
-        sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setContentsMargins(20, 20, 20, 20)
+        # Sidebar (Scrollable)
+        sidebar_scroll = QScrollArea()
+        sidebar_scroll.setWidgetResizable(True)
+        sidebar_scroll.setFixedWidth(400)
+        sidebar_scroll.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background: transparent;
+            }
+            QScrollBar:vertical {
+                border: none;
+                background: rgba(0,0,0,0.1);
+                width: 8px;
+                margin: 0;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(255,255,255,0.2);
+                min-height: 20px;
+                border-radius: 4px;
+            }
+        """)
+        
+        sidebar_content = QWidget()
+        sidebar_content.setStyleSheet("background: transparent;")
+        sidebar_layout = QVBoxLayout(sidebar_content)
+        sidebar_layout.setContentsMargins(0, 0, 20, 0) # Right padding for scrollbar
         sidebar_layout.setSpacing(15)
         
         # Controls Section
+        controls_card = MaterialCard(elevation=2)
+        controls_layout = QVBoxLayout(controls_card)
+        
         controls_label = QLabel("⚙️ Controls")
         controls_label.setFont(QFont("SF Pro Display", 18, QFont.Weight.Bold))
         controls_label.setStyleSheet("color: white;")
-        sidebar_layout.addWidget(controls_label)
+        controls_layout.addWidget(controls_label)
         
         # Ticker Input
         ticker_label = QLabel("Ticker Symbol")
         ticker_label.setFont(QFont("SF Pro Text", 12))
         ticker_label.setStyleSheet("color: rgba(255, 255, 255, 0.7);")
-        sidebar_layout.addWidget(ticker_label)
+        controls_layout.addWidget(ticker_label)
         
         self.ticker_input = QLineEdit("AAPL")
         self.ticker_input.setFont(QFont("SF Mono", 14))
@@ -270,13 +406,13 @@ class MainWindow(QMainWindow):
             }
         """)
         self.ticker_input.returnPressed.connect(self.load_data)
-        sidebar_layout.addWidget(self.ticker_input)
+        controls_layout.addWidget(self.ticker_input)
         
         # Period
         period_label = QLabel("Time Period")
         period_label.setFont(QFont("SF Pro Text", 12))
         period_label.setStyleSheet("color: rgba(255, 255, 255, 0.7);")
-        sidebar_layout.addWidget(period_label)
+        controls_layout.addWidget(period_label)
         
         self.period_combo = QComboBox()
         self.period_combo.addItems(["1y", "2y", "5y", "max"])
@@ -300,13 +436,13 @@ class MainWindow(QMainWindow):
                 border-top: 5px solid white;
             }
         """)
-        sidebar_layout.addWidget(self.period_combo)
+        controls_layout.addWidget(self.period_combo)
         
         # Forecast Days
         self.days_label = QLabel("Forecast: 30 days")
         self.days_label.setFont(QFont("SF Pro Text", 12))
         self.days_label.setStyleSheet("color: rgba(255, 255, 255, 0.7);")
-        sidebar_layout.addWidget(self.days_label)
+        controls_layout.addWidget(self.days_label)
         
         self.days_slider = QSlider(Qt.Orientation.Horizontal)
         self.days_slider.setRange(7, 90)
@@ -326,37 +462,45 @@ class MainWindow(QMainWindow):
                 border-radius: 10px;
             }
         """)
-        sidebar_layout.addWidget(self.days_slider)
+        controls_layout.addWidget(self.days_slider)
         
         # Buttons
+        self.run_btn = MaterialButton("🚀 Run Predictions", color="#6750A4")
         self.run_btn.clicked.connect(self.run_predictions)
-        sidebar_layout.addWidget(self.run_btn)
+        controls_layout.addWidget(self.run_btn)
+        
+        sidebar_layout.addWidget(controls_card)
 
         # Quant Stats
-        sidebar_layout.addSpacing(10)
+        stats_card = MaterialCard(elevation=2)
+        stats_layout = QVBoxLayout(stats_card)
+        
         stats_title = QLabel("📊 Quant Stats")
         stats_title.setFont(QFont("SF Pro Display", 16, QFont.Weight.Bold))
         stats_title.setStyleSheet("color: white;")
-        sidebar_layout.addWidget(stats_title)
+        stats_layout.addWidget(stats_title)
 
         self.stats_frame = QFrame()
         self.stats_frame.setStyleSheet("background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 5px;")
-        self.stats_layout = QVBoxLayout(self.stats_frame)
+        self.stats_layout_inner = QVBoxLayout(self.stats_frame)
         self.stats_labels = {}
         for metric in ["Sharpe Ratio", "Volatility", "Max Drawdown"]:
             lbl = QLabel(f"{metric}: --")
             lbl.setFont(QFont("SF Pro Text", 11))
             lbl.setStyleSheet("color: rgba(255, 255, 255, 0.8);")
-            self.stats_layout.addWidget(lbl)
+            self.stats_layout_inner.addWidget(lbl)
             self.stats_labels[metric] = lbl
-        sidebar_layout.addWidget(self.stats_frame)
+        stats_layout.addWidget(self.stats_frame)
+        sidebar_layout.addWidget(stats_card)
 
         # Indicators
-        sidebar_layout.addSpacing(10)
+        ind_card = MaterialCard(elevation=2)
+        ind_layout = QVBoxLayout(ind_card)
+        
         ind_title = QLabel("📉 Indicators")
         ind_title.setFont(QFont("SF Pro Display", 16, QFont.Weight.Bold))
         ind_title.setStyleSheet("color: white;")
-        sidebar_layout.addWidget(ind_title)
+        ind_layout.addWidget(ind_title)
 
         from PyQt6.QtWidgets import QCheckBox
         self.chk_sma = QCheckBox("SMA (20)")
@@ -366,27 +510,33 @@ class MainWindow(QMainWindow):
             chk.setFont(QFont("SF Pro Text", 12))
             chk.setStyleSheet("color: white; spacing: 8px;")
             chk.stateChanged.connect(self.update_chart)
-            sidebar_layout.addWidget(chk)
+            ind_layout.addWidget(chk)
+        sidebar_layout.addWidget(ind_card)
         
         # Sentiment
-        sidebar_layout.addSpacing(10)
+        sent_card = MaterialCard(elevation=2)
+        sent_layout = QVBoxLayout(sent_card)
+        
         sentiment_title = QLabel("💭 Market Sentiment")
         sentiment_title.setFont(QFont("SF Pro Display", 16, QFont.Weight.Bold))
         sentiment_title.setStyleSheet("color: white;")
-        sidebar_layout.addWidget(sentiment_title)
+        sent_layout.addWidget(sentiment_title)
         
         self.sentiment_label = QLabel("Analyzing...")
         self.sentiment_label.setFont(QFont("SF Pro Display", 18, QFont.Weight.Bold))
         self.sentiment_label.setStyleSheet("color: #00FF88;")
         self.sentiment_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        sidebar_layout.addWidget(self.sentiment_label)
+        sent_layout.addWidget(self.sentiment_label)
+        sidebar_layout.addWidget(sent_card)
         
         # AI Chat
-        sidebar_layout.addSpacing(10)
+        ai_card = MaterialCard(elevation=2)
+        ai_layout = QVBoxLayout(ai_card)
+        
         ai_title = QLabel("🤖 AI Assistant")
         ai_title.setFont(QFont("SF Pro Display", 16, QFont.Weight.Bold))
         ai_title.setStyleSheet("color: white;")
-        sidebar_layout.addWidget(ai_title)
+        ai_layout.addWidget(ai_title)
         
         self.chat_history = QTextEdit()
         self.chat_history.setReadOnly(True)
@@ -401,7 +551,7 @@ class MainWindow(QMainWindow):
             }
         """)
         self.chat_history.setText("💬 AI ready. Ask me anything!")
-        sidebar_layout.addWidget(self.chat_history)
+        ai_layout.addWidget(self.chat_history)
         
         # Chat Input
         chat_input_layout = QHBoxLayout()
@@ -420,14 +570,16 @@ class MainWindow(QMainWindow):
         self.chat_input.returnPressed.connect(self.send_chat_message)
         
         self.send_btn = MaterialButton("Send", color="#34C759")
-        self.send_btn.setMaximumWidth(80)
+        self.send_btn.setFixedSize(80, 40) # Fixed size for button
         self.send_btn.clicked.connect(self.send_chat_message)
         
         chat_input_layout.addWidget(self.chat_input)
         chat_input_layout.addWidget(self.send_btn)
-        sidebar_layout.addLayout(chat_input_layout)
+        ai_layout.addLayout(chat_input_layout)
+        sidebar_layout.addWidget(ai_card)
         
-        content_layout.addWidget(sidebar)
+        sidebar_scroll.setWidget(sidebar_content)
+        content_layout.addWidget(sidebar_scroll)
         content_container_layout.addLayout(content_layout)
         layout.addWidget(content_container, stretch=1)
         
@@ -437,8 +589,9 @@ class MainWindow(QMainWindow):
         
     def setup_styling(self):
         # Premium gradient background
+        # Premium gradient background
         self.setStyleSheet("""
-            QMainWindow {
+            QMainWindow, #MainWidget {
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:1,
                     stop:0 #0A0E27,
@@ -554,15 +707,17 @@ class MainWindow(QMainWindow):
                                     name='SMA (20)')
                                     
             if self.chk_bb.isChecked() and 'BB_High' in self.df.columns:
-                self.plot_widget.plot(timestamps, self.df['BB_High'].values,
+                # Plot High and Low bands
+                high_plot = self.plot_widget.plot(timestamps, self.df['BB_High'].values,
                                     pen=pg.mkPen(color='rgba(255,255,255,0.3)', width=1),
                                     name='BB High')
-                self.plot_widget.plot(timestamps, self.df['BB_Low'].values,
+                low_plot = self.plot_widget.plot(timestamps, self.df['BB_Low'].values,
                                     pen=pg.mkPen(color='rgba(255,255,255,0.3)', width=1),
                                     name='BB Low')
                 
-                # Fill between bands (requires FillBetweenItem, simplified here)
-                # For now just lines are fine to avoid complexity with FillBetweenItem in this context
+                # Fill between bands
+                fill = pg.FillBetweenItem(low_plot, high_plot, brush=pg.mkBrush(255, 255, 255, 30))
+                self.plot_widget.addItem(fill)
             
             # Predictions
             if self.predictions:
