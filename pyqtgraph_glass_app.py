@@ -6,8 +6,8 @@ import numpy as np
 from datetime import datetime
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QLineEdit, QComboBox, 
-                             QSlider, QPushButton, QFrame, QMessageBox, QTextEdit, QGraphicsDropShadowEffect)
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread, QPropertyAnimation, QEasingCurve
+                             QSlider, QPushButton, QFrame, QMessageBox, QTextEdit, QGraphicsBlurEffect)
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread, QPropertyAnimation, QEasingCurve, QRect
 from PyQt6.QtGui import QPainter, QColor, QFont, QPalette, QLinearGradient, QPen, QBrush
 
 import pyqtgraph as pg
@@ -20,68 +20,72 @@ from src.utils import setup_dirs
 
 # Configure PyQtGraph
 pg.setConfigOptions(antialias=True)
-pg.setConfigOption('background', '#1C1B1F')
-pg.setConfigOption('foreground', '#E6E1E5')
+pg.setConfigOption('background', 'transparent')
+pg.setConfigOption('foreground', 'w')
 
-class MaterialCard(QFrame):
-    """Material Design 3 elevated card"""
-    def __init__(self, parent=None, elevation=2):
+class GlassFrame(QFrame):
+    """Glassmorphism frame with frosted glass effect"""
+    def __init__(self, parent=None, blur_radius=15):
         super().__init__(parent)
-        self.elevation = elevation
-        self.setAutoFillBackground(True)
+        self.blur_radius = blur_radius
+        self.setAutoFillBackground(False)
         
-        # Material You surface color
-        palette = self.palette()
-        palette.setColor(QPalette.ColorRole.Window, QColor("#1C1B1F"))  # Surface
-        self.setPalette(palette)
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
-        # Add shadow for elevation
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(elevation * 8)
-        shadow.setColor(QColor(0, 0, 0, 60))
-        shadow.setOffset(0, elevation * 2)
-        self.setGraphicsEffect(shadow)
+        # Frosted glass background
+        gradient = QLinearGradient(0, 0, 0, self.height())
+        gradient.setColorAt(0, QColor(255, 255, 255, 25))  # Semi-transparent white
+        gradient.setColorAt(1, QColor(255, 255, 255, 15))
         
-        self.setStyleSheet(f"""
-            MaterialCard {{
-                background-color: #1C1B1F;
-                border-radius: 16px;
-                border: 1px solid #49454F;
-            }}
-        """)
+        painter.setBrush(QBrush(gradient))
+        painter.setPen(QPen(QColor(255, 255, 255, 40), 1))
+        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 20, 20)
 
-class MaterialButton(QPushButton):
-    """Material Design 3 filled button"""
-    def __init__(self, text, parent=None, color="#6750A4"):
+class GlassButton(QPushButton):
+    """Premium glass button with hover effects"""
+    def __init__(self, text, parent=None, color="#007AFF"):
         super().__init__(text, parent)
         self.base_color = QColor(color)
         self.hovered = False
-        self.setMinimumHeight(48)
+        self.setMinimumHeight(44)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setFont(QFont("Roboto", 14, QFont.Weight.Medium))
         
-        self.update_style()
+    def enterEvent(self, event):
+        self.hovered = True
+        self.update()
         
-    def update_style(self):
-        bg_color = self.base_color.name()
-        hover_color = self.base_color.lighter(110).name()
+    def leaveEvent(self, event):
+        self.hovered = False
+        self.update()
         
-        self.setStyleSheet(f"""
-            MaterialButton {{
-                background-color: {bg_color};
-                color: white;
-                border: none;
-                border-radius: 24px;
-                padding: 12px 24px;
-                font-weight: 500;
-            }}
-            MaterialButton:hover {{
-                background-color: {hover_color};
-            }}
-            MaterialButton:pressed {{
-                background-color: {self.base_color.darker(110).name()};
-            }}
-        """)
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        # Glass effect
+        gradient = QLinearGradient(0, 0, 0, self.height())
+        if self.hovered:
+            gradient.setColorAt(0, QColor(self.base_color.red(), self.base_color.green(), 
+                                         self.base_color.blue(), 180))
+            gradient.setColorAt(1, QColor(self.base_color.red(), self.base_color.green(), 
+                                         self.base_color.blue(), 140))
+        else:
+            gradient.setColorAt(0, QColor(self.base_color.red(), self.base_color.green(), 
+                                         self.base_color.blue(), 150))
+            gradient.setColorAt(1, QColor(self.base_color.red(), self.base_color.green(), 
+                                         self.base_color.blue(), 110))
+        
+        painter.setBrush(QBrush(gradient))
+        painter.setPen(QPen(QColor(255, 255, 255, 60), 1))
+        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 12, 12)
+        
+        # Text
+        painter.setPen(QColor(255, 255, 255))
+        painter.setFont(QFont("SF Pro Display", 13, QFont.Weight.Medium))
+        painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, self.text())
+
 class TickerTape(QWidget):
     def __init__(self, parent=None, speed=2):
         super().__init__(parent)
@@ -89,49 +93,59 @@ class TickerTape(QWidget):
         self.items = []
         self.speed = speed
         self.offset = 0
-        # Use a dot‑matrix style monospaced font. "Digital-7" is a common dot‑matrix font; fallback to Courier New.
-        self.font = QFont("Digital-7", 12, QFont.Weight.Bold)
-        if not self.font.exactMatch():
-            self.font = QFont("Courier New", 12, QFont.Weight.Bold)
-        self.font.setLetterSpacing(QFont.SpacingType.AbsoluteSpacing, 2)
+        self.font = QFont("SF Mono", 11, QFont.Weight.Medium)
+        
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_position)
         self.timer.start(20)
-
+        
     def set_items(self, items):
         self.items = items
         self.offset = 0
         self.update()
-
+        
     def update_position(self):
         if not self.items:
             return
         self.offset -= self.speed
         self.update()
-
+        
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        # Dark background matching Material theme
-        painter.fillRect(self.rect(), QColor("#1C1B1F"))
+        
+        # Glass background
+        gradient = QLinearGradient(0, 0, 0, self.height())
+        gradient.setColorAt(0, QColor(0, 0, 0, 120))
+        gradient.setColorAt(1, QColor(0, 0, 0, 80))
+        painter.setBrush(QBrush(gradient))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRect(self.rect())
+        
         painter.setFont(self.font)
+        
         if not self.items:
             return
+            
         x = self.offset
         for item in self.items:
             if isinstance(item, tuple):
                 text, color_str = item
-                text_color = QColor(color_str)
+                painter.setPen(QColor(color_str))
             else:
                 text = item
-                text_color = QColor("#4CAF50")  # Material green
+                painter.setPen(QColor("#00FF88"))
+                
             text_width = painter.fontMetrics().horizontalAdvance(text)
+            
             if x + text_width > 0 and x < self.width():
-                painter.setPen(text_color)
                 painter.drawText(x, 32, text)
+            
             x += text_width + 50
+            
         if x < 0:
             self.offset = self.width()
+
 class AIThread(QThread):
     analysis_ready = pyqtSignal(str)
     
@@ -212,8 +226,8 @@ class MainWindow(QMainWindow):
         content_layout = QHBoxLayout()
         content_layout.setSpacing(20)
         
-        # Chart Area (Material Card)
-        chart_panel = MaterialCard(elevation=3)
+        # Chart Area (Glass Panel)
+        chart_panel = GlassFrame()
         chart_panel_layout = QVBoxLayout(chart_panel)
         chart_panel_layout.setContentsMargins(20, 20, 20, 20)
         
@@ -233,8 +247,8 @@ class MainWindow(QMainWindow):
         
         content_layout.addWidget(chart_panel, stretch=2)
         
-        # Sidebar (Material Card)
-        sidebar = MaterialCard(elevation=2)
+        # Sidebar (Glass Panel)
+        sidebar = GlassFrame()
         sidebar.setFixedWidth(380)
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(20, 20, 20, 20)
@@ -327,7 +341,7 @@ class MainWindow(QMainWindow):
         sidebar_layout.addWidget(self.days_slider)
         
         # Buttons
-        self.run_btn = MaterialButton("🚀 Run Predictions", color="#6750A4")
+        self.run_btn = GlassButton("🚀 Run Predictions", color="#007AFF")
         self.run_btn.clicked.connect(self.run_predictions)
         sidebar_layout.addWidget(self.run_btn)
         
@@ -382,7 +396,7 @@ class MainWindow(QMainWindow):
         """)
         self.chat_input.returnPressed.connect(self.send_chat_message)
         
-        self.send_btn = MaterialButton("Send", color="#34C759")
+        self.send_btn = GlassButton("Send", color="#34C759")
         self.send_btn.setMaximumWidth(80)
         self.send_btn.clicked.connect(self.send_chat_message)
         

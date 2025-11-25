@@ -63,26 +63,45 @@ def load_model_and_infer(prompt):
     if model is None:
         return {"error": "All loading strategies failed."}
 
-    # Inference
+    # Inference with streaming
     messages = [
-        {"role": "system", "content": "You are a helpful financial analyst assistant."},
+        {"role": "system", "content": "You are a helpful financial analyst. Be concise."},
         {"role": "user", "content": prompt},
     ]
 
     try:
-        response = model.create_chat_completion(
+        # Speed optimizations: lower max_tokens, temperature, enable streaming
+        thinking_content = ""
+        final_content = ""
+        
+        for chunk in model.create_chat_completion(
             messages=messages,
-            max_tokens=2048, # Increased to prevent cut-offs
-            temperature=0.7,
-            top_p=0.9,
-        )
-        content = response["choices"][0]["message"]["content"].strip()
+            max_tokens=1024,  # Reduced for speed
+            temperature=0.5,  # Lower for faster, more focused responses
+            top_p=0.85,
+            stream=True  # Enable streaming
+        ):
+            delta = chunk.get("choices", [{}])[0].get("delta", {})
+            content_chunk = delta.get("content", "")
+            if content_chunk:
+                # Output streaming chunks
+                print(json.dumps({"chunk": content_chunk}), flush=True)
+                final_content += content_chunk
         
-        # Post-processing: Remove <think>...</think> blocks
+        # Post-processing: Extract thinking and final answer
         import re
-        content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
+        thinking_match = re.search(r'<think>(.*?)</think>', final_content, re.DOTALL)
+        if thinking_match:
+            thinking_content = thinking_match.group(1).strip()
+            final_answer = re.sub(r'<think>.*?</think>', '', final_content, flags=re.DOTALL).strip()
+        else:
+            final_answer = final_content.strip()
         
-        return {"response": content, "strategy": used_strategy}
+        return {
+            "response": final_answer,
+            "thinking": thinking_content,
+            "strategy": used_strategy
+        }
     except Exception as e:
         return {"error": f"Inference failed: {e}"}
 

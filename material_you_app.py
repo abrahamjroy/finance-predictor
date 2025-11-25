@@ -82,6 +82,7 @@ class MaterialButton(QPushButton):
                 background-color: {self.base_color.darker(110).name()};
             }}
         """)
+
 class TickerTape(QWidget):
     def __init__(self, parent=None, speed=2):
         super().__init__(parent)
@@ -89,34 +90,37 @@ class TickerTape(QWidget):
         self.items = []
         self.speed = speed
         self.offset = 0
-        # Use a dot‑matrix style monospaced font. "Digital-7" is a common dot‑matrix font; fallback to Courier New.
-        self.font = QFont("Digital-7", 12, QFont.Weight.Bold)
-        if not self.font.exactMatch():
-            self.font = QFont("Courier New", 12, QFont.Weight.Bold)
+        # Dot matrix style font
+        self.font = QFont("Courier New", 12, QFont.Weight.Bold)
         self.font.setLetterSpacing(QFont.SpacingType.AbsoluteSpacing, 2)
+        
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_position)
         self.timer.start(20)
-
+        
     def set_items(self, items):
         self.items = items
         self.offset = 0
         self.update()
-
+        
     def update_position(self):
         if not self.items:
             return
         self.offset -= self.speed
         self.update()
-
+        
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        # Dark background matching Material theme
+        
+        # Material dark background
         painter.fillRect(self.rect(), QColor("#1C1B1F"))
+        
         painter.setFont(self.font)
+        
         if not self.items:
             return
+            
         x = self.offset
         for item in self.items:
             if isinstance(item, tuple):
@@ -125,13 +129,27 @@ class TickerTape(QWidget):
             else:
                 text = item
                 text_color = QColor("#4CAF50")  # Material green
+                
             text_width = painter.fontMetrics().horizontalAdvance(text)
+            
             if x + text_width > 0 and x < self.width():
+                # Draw glow effect (shadow behind text)
+                painter.setPen(QPen(text_color.lighter(150), 3))
+                painter.drawText(x, 32, text)
+                painter.drawText(x+1, 32, text)
+                painter.drawText(x-1, 32, text)
+                painter.drawText(x, 33, text)
+                painter.drawText(x, 31, text)
+                
+                # Draw main text
                 painter.setPen(text_color)
                 painter.drawText(x, 32, text)
+            
             x += text_width + 50
+            
         if x < 0:
             self.offset = self.width()
+
 class AIThread(QThread):
     analysis_ready = pyqtSignal(str)
     

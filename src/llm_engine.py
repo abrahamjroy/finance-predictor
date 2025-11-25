@@ -15,21 +15,17 @@ class LLMEngine:
     """
 
     def __init__(self):
-        # No eager loading needed for subprocess approach
-        # The subprocess loads the model on demand (or could be a persistent server, 
-        # but for now on-demand is safer for stability)
-        self.model = True # Dummy flag to satisfy app checks
+        self.model = True  # Dummy flag to satisfy app checks
 
     def _load_model(self):
-        """
-        Legacy method kept for compatibility. 
-        The actual loading happens in the subprocess.
-        """
+        """Legacy method kept for compatibility."""
         pass
 
-    def analyze(self, prompt: str) -> str:
+    def analyze(self, prompt: str, stream_callback=None) -> dict:
         """
         Generate a response by running the inference script in a subprocess.
+        If stream_callback is provided, it will be called with each chunk.
+        Returns dict with 'response', 'thinking', and 'strategy' keys.
         """
         try:
             script_path = Path(__file__).parent / "inference_script.py"
@@ -38,44 +34,63 @@ class LLMEngine:
             input_data = json.dumps({"prompt": prompt})
             
             # Run subprocess
-            # We use sys.executable to ensure we use the same python environment
             process = subprocess.Popen(
                 [sys.executable, str(script_path)],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                encoding='utf-8'
+                encoding='utf-8',
+                bufsize=1  # Line buffered for streaming
             )
             
-            stdout, stderr = process.communicate(input=input_data)
+            # Send input
+            process.stdin.write(input_data)
+            process.stdin.close()
+            
+            # Read streaming output
+            full_output = ""
+            for line in process.stdout:
+                line = line.strip()
+                if not line:
+                    continue
+                    
+                try:
+                    chunk_data = json.loads(line)
+                    if "chunk" in chunk_data and stream_callback:
+                        stream_callback(chunk_data["chunk"])
+                    full_output += line + "\n"
+                except json.JSONDecodeError:
+                    full_output += line + "\n"
+            
+            stderr = process.stderr.read()
+            process.wait()
             
             if stderr:
                 logger.warning(f"LLM Subprocess Stderr: {stderr}")
                 
             if process.returncode != 0:
                 logger.error(f"LLM Subprocess failed with code {process.returncode}")
-                return f"Error: AI process failed. Logs: {stderr}"
+                return {"error": f"AI process failed. Logs: {stderr}"}
                 
-            # Parse output
-            try:
-                result = json.loads(stdout)
-                if "error" in result:
-                    return f"Error from AI: {result['error']}"
-                return result.get("response", "Error: No response received.")
-            except json.JSONDecodeError:
-                logger.error(f"Failed to parse JSON output: {stdout}")
-                return f"Error: Invalid output from AI process. Raw: {stdout}"
+            # Parse final output (last line should be the result JSON)
+            lines = [l.strip() for l in full_output.split("\n") if l.strip()]
+            for line in reversed(lines):
+                try:
+                    result = json.loads(line)
+                    if "error" in result or "response" in result:
+                        return result
+                except json.JSONDecodeError:
+                    continue
+                    
+            return {"error": "No valid response received"}
 
         except Exception as e:
             logger.error(f"Error during analysis: {e}")
-            return f"Error during analysis: {e}"
+            return {"error": f"Error during analysis: {e}"}
 
     def chat(self, messages: list) -> str:
-        """
-        Support for chat history. Converts messages to a single prompt string for now.
-        """
-        # Simple conversion for the Phi model
+        """Support for chat history."""
         prompt = ""
         for msg in messages:
             role = msg['role']
@@ -83,4 +98,5 @@ class LLMEngine:
             prompt += f"<|{role}|>\n{content}<|end|>\n"
         
         prompt += "<|assistant|>\n"
-        return self.analyze(prompt)
+        result = self.analyze(prompt)
+        return result.get("response", str(result))
