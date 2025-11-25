@@ -1,7 +1,5 @@
-flet
-matplotlib
-mplfinance
-streamlit
+PyQt6
+pyqtgraph
 yfinance>=0.2.66
 pandas
 numpy
@@ -10,8 +8,6 @@ xgboost
 statsmodels
 prophet
 nltk
-textblob
-plotly
 ta
 llama-cpp-python
 arch
