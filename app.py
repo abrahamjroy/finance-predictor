@@ -503,10 +503,11 @@ class MainWindow(QMainWindow):
         ind_layout.addWidget(ind_title)
 
         from PyQt6.QtWidgets import QCheckBox
+        self.chk_candle = QCheckBox("Candlestick Chart")
         self.chk_sma = QCheckBox("SMA (20)")
         self.chk_bb = QCheckBox("Bollinger Bands")
         
-        for chk in [self.chk_sma, self.chk_bb]:
+        for chk in [self.chk_candle, self.chk_sma, self.chk_bb]:
             chk.setFont(QFont("SF Pro Text", 12))
             chk.setStyleSheet("color: white; spacing: 8px;")
             chk.stateChanged.connect(self.update_chart)
@@ -550,6 +551,7 @@ class MainWindow(QMainWindow):
                 color: white;
             }
         """)
+        self.chat_history.setMinimumHeight(200) # Increased height
         self.chat_history.setText("💬 AI ready. Ask me anything!")
         ai_layout.addWidget(self.chat_history)
         
@@ -570,7 +572,8 @@ class MainWindow(QMainWindow):
         self.chat_input.returnPressed.connect(self.send_chat_message)
         
         self.send_btn = MaterialButton("Send", color="#34C759")
-        self.send_btn.setFixedSize(80, 40) # Fixed size for button
+        self.send_btn.setFixedSize(80, 40)
+        self.send_btn.setFont(QFont("Roboto", 12, QFont.Weight.Medium)) # Reduced font size
         self.send_btn.clicked.connect(self.send_chat_message)
         
         chat_input_layout.addWidget(self.chat_input)
@@ -694,11 +697,75 @@ class MainWindow(QMainWindow):
             
             timestamps = [d.timestamp() for d in self.df.index]
             
-            # Historical data with glow effect
-            self.plot_widget.plot(timestamps, self.df['Close'].values, 
-                                pen=pg.mkPen(color='#00FF88', width=3), 
-                                name='Historical Price',
-                                shadowPen=pg.mkPen(color='#00FF88', width=6, alpha=50))
+            timestamps = [d.timestamp() for d in self.df.index]
+            
+            # Chart Type Selection
+            if self.chk_candle.isChecked():
+                # Candlestick Chart
+                # Prepare data for candles
+                opens = self.df['Open'].values
+                closes = self.df['Close'].values
+                highs = self.df['High'].values
+                lows = self.df['Low'].values
+                
+                # Colors for candles
+                bullish = closes >= opens
+                bearish = ~bullish
+                
+                # Draw wicks (High to Low)
+                self.plot_widget.plot(timestamps, highs, pen=None, symbol='o', symbolSize=0) # Hidden plot to set range if needed, but mainly we draw items
+                
+                # We use ErrorBarItem for wicks or just plot lines. 
+                # A simpler way in pyqtgraph for candles is using BarGraphItem for body and PlotCurveItem for wicks, 
+                # or a custom CandlestickItem. Let's use a simplified approach with BarGraphItem for bodies and lines for wicks.
+                
+                # Wicks
+                for i in range(len(timestamps)):
+                    t = timestamps[i]
+                    color = '#00FF88' if bullish[i] else '#FF3B30'
+                    self.plot_widget.plot([t, t], [lows[i], highs[i]], pen=pg.mkPen(color, width=1))
+                
+                # Bodies
+                # Width of candle in seconds (approx 1 day minus some padding)
+                width = 24 * 60 * 60 * 0.8 
+                
+                # Bullish bodies (Close > Open) - Green
+                if np.any(bullish):
+                    # Height is abs(Close - Open), y is min(Open, Close) which is Open for bullish
+                    # But BarGraphItem takes height. 
+                    # y0 (bottom) = Open, y1 (top) = Close. 
+                    # pyqtgraph BarGraphItem: x, height, y0 (optional vertical base).
+                    
+                    # Using y0 to specify bottom of bar
+                    self.plot_widget.addItem(pg.BarGraphItem(
+                        x=np.array(timestamps)[bullish],
+                        y0=opens[bullish],
+                        height=closes[bullish] - opens[bullish],
+                        width=width,
+                        brush=pg.mkBrush('#00FF88'),
+                        pen=pg.mkPen(None)
+                    ))
+                    
+                # Bearish bodies (Open > Close) - Red
+                if np.any(bearish):
+                    # y0 = Close, height = Open - Close
+                    self.plot_widget.addItem(pg.BarGraphItem(
+                        x=np.array(timestamps)[bearish],
+                        y0=closes[bearish],
+                        height=opens[bearish] - closes[bearish],
+                        width=width,
+                        brush=pg.mkBrush('#FF3B30'),
+                        pen=pg.mkPen(None)
+                    ))
+                    
+            else:
+                # Line Chart (Default)
+                self.plot_widget.plot(timestamps, self.df['Close'].values, 
+                                    pen=pg.mkPen(color='#00FF88', width=3), 
+                                    name='Historical Price',
+                                    shadowPen=pg.mkPen(color='#00FF88', width=6, alpha=50))
+            
+            # Indicators
             
             # Indicators
             if self.chk_sma.isChecked() and 'SMA_20' in self.df.columns:
