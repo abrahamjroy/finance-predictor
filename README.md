@@ -1,5 +1,8 @@
 # Finance Predictor Pro (Native UI Edition)
 
+<img width="1920" height="1053" alt="image" src="https://github.com/user-attachments/assets/dbe68db6-29cc-4c1a-94ad-66b29c2a60c1" />
+
+
 A high-performance financial prediction desktop application built with **PyQt6** and **PyQtGraph**, featuring 10+ forecasting algorithms, sentiment analysis, and local LLM integration for AI-powered market insights.
 
 ## Features
