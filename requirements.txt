@@ -12,3 +12,4 @@ ta
 llama-cpp-python
 arch
 pykalman
+scipy

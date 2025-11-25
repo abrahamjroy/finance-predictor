@@ -16,6 +16,7 @@ from src.data_loader import DataLoader
 from src.forecasting import ForecastEngine
 from src.sentiment import SentimentEngine
 from src.llm_engine import LLMEngine
+from src.quant_analysis import QuantAnalyzer
 from src.utils import setup_dirs
 
 # Configure PyQtGraph
@@ -168,6 +169,7 @@ class MainWindow(QMainWindow):
         self.llm_engine = None
         self.forecaster = ForecastEngine()
         self.sentiment_analyzer = SentimentEngine()
+        self.quant_analyzer = QuantAnalyzer()
         self.predictions = {}
         
         # Setup UI
@@ -327,9 +329,44 @@ class MainWindow(QMainWindow):
         sidebar_layout.addWidget(self.days_slider)
         
         # Buttons
-        self.run_btn = MaterialButton("🚀 Run Predictions", color="#6750A4")
         self.run_btn.clicked.connect(self.run_predictions)
         sidebar_layout.addWidget(self.run_btn)
+
+        # Quant Stats
+        sidebar_layout.addSpacing(10)
+        stats_title = QLabel("📊 Quant Stats")
+        stats_title.setFont(QFont("SF Pro Display", 16, QFont.Weight.Bold))
+        stats_title.setStyleSheet("color: white;")
+        sidebar_layout.addWidget(stats_title)
+
+        self.stats_frame = QFrame()
+        self.stats_frame.setStyleSheet("background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 5px;")
+        self.stats_layout = QVBoxLayout(self.stats_frame)
+        self.stats_labels = {}
+        for metric in ["Sharpe Ratio", "Volatility", "Max Drawdown"]:
+            lbl = QLabel(f"{metric}: --")
+            lbl.setFont(QFont("SF Pro Text", 11))
+            lbl.setStyleSheet("color: rgba(255, 255, 255, 0.8);")
+            self.stats_layout.addWidget(lbl)
+            self.stats_labels[metric] = lbl
+        sidebar_layout.addWidget(self.stats_frame)
+
+        # Indicators
+        sidebar_layout.addSpacing(10)
+        ind_title = QLabel("📉 Indicators")
+        ind_title.setFont(QFont("SF Pro Display", 16, QFont.Weight.Bold))
+        ind_title.setStyleSheet("color: white;")
+        sidebar_layout.addWidget(ind_title)
+
+        from PyQt6.QtWidgets import QCheckBox
+        self.chk_sma = QCheckBox("SMA (20)")
+        self.chk_bb = QCheckBox("Bollinger Bands")
+        
+        for chk in [self.chk_sma, self.chk_bb]:
+            chk.setFont(QFont("SF Pro Text", 12))
+            chk.setStyleSheet("color: white; spacing: 8px;")
+            chk.stateChanged.connect(self.update_chart)
+            sidebar_layout.addWidget(chk)
         
         # Sentiment
         sidebar_layout.addSpacing(10)
@@ -448,6 +485,7 @@ class MainWindow(QMainWindow):
             self.update_chart()
             self.update_sentiment()
             self.update_news_ticker()
+            self.update_quant_stats()
             
             QMessageBox.information(self, "✅ Success", f"Loaded {len(self.df)} days of data for {ticker}")
         except Exception as e:
@@ -476,6 +514,24 @@ class MainWindow(QMainWindow):
         else:
             self.bottom_ticker.set_items(["No recent news found."])
 
+    def update_quant_stats(self):
+        if self.df.empty:
+            return
+            
+        # Calculate metrics
+        metrics = self.quant_analyzer.calculate_metrics(self.df)
+        
+        # Update labels
+        if "Sharpe Ratio" in metrics:
+            self.stats_labels["Sharpe Ratio"].setText(f"Sharpe Ratio: {metrics['Sharpe Ratio']}")
+        if "Annual Volatility" in metrics:
+            self.stats_labels["Volatility"].setText(f"Volatility: {metrics['Annual Volatility']}")
+        if "Max Drawdown" in metrics:
+            self.stats_labels["Max Drawdown"].setText(f"Max Drawdown: {metrics['Max Drawdown']}")
+            
+        # Add indicators to DF
+        self.df = self.quant_analyzer.add_indicators(self.df)
+
     def update_chart(self):
         try:
             self.plot_widget.clear()
@@ -490,6 +546,23 @@ class MainWindow(QMainWindow):
                                 pen=pg.mkPen(color='#00FF88', width=3), 
                                 name='Historical Price',
                                 shadowPen=pg.mkPen(color='#00FF88', width=6, alpha=50))
+            
+            # Indicators
+            if self.chk_sma.isChecked() and 'SMA_20' in self.df.columns:
+                self.plot_widget.plot(timestamps, self.df['SMA_20'].values,
+                                    pen=pg.mkPen(color='#FFD60A', width=2),
+                                    name='SMA (20)')
+                                    
+            if self.chk_bb.isChecked() and 'BB_High' in self.df.columns:
+                self.plot_widget.plot(timestamps, self.df['BB_High'].values,
+                                    pen=pg.mkPen(color='rgba(255,255,255,0.3)', width=1),
+                                    name='BB High')
+                self.plot_widget.plot(timestamps, self.df['BB_Low'].values,
+                                    pen=pg.mkPen(color='rgba(255,255,255,0.3)', width=1),
+                                    name='BB Low')
+                
+                # Fill between bands (requires FillBetweenItem, simplified here)
+                # For now just lines are fine to avoid complexity with FillBetweenItem in this context
             
             # Predictions
             if self.predictions:
