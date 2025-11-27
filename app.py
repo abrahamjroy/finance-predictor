@@ -6,9 +6,9 @@ import numpy as np
 from datetime import datetime
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QLineEdit, QComboBox, 
-                             QSlider, QPushButton, QFrame, QMessageBox, QTextEdit, QGraphicsDropShadowEffect, QScrollArea, QSizePolicy)
+                             QSlider, QPushButton, QFrame, QMessageBox, QTextEdit, QGraphicsDropShadowEffect, QScrollArea, QSizePolicy, QSplashScreen)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread, QPropertyAnimation, QEasingCurve
-from PyQt6.QtGui import QPainter, QColor, QFont, QPalette, QLinearGradient, QPen, QBrush
+from PyQt6.QtGui import QPainter, QColor, QFont, QPalette, QLinearGradient, QPen, QBrush, QPixmap, QIcon
 
 import pyqtgraph as pg
 
@@ -1067,12 +1067,41 @@ class MainWindow(QMainWindow):
         
         self.append_chat("🤖", response)
 
+class SplashScreen(QSplashScreen):
+    def __init__(self):
+        super().__init__()
+        self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
+        
+        # Load logo
+        pixmap = QPixmap("assets/logo.png")
+        # Scale if too big
+        if pixmap.width() > 300:
+            pixmap = pixmap.scaledToWidth(300, Qt.TransformationMode.SmoothTransformation)
+            
+        self.setPixmap(pixmap)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     
     # Set app-wide font
     app.setFont(QFont("SF Pro Display", 11))
     
+    # Set Window Icon
+    app.setWindowIcon(QIcon("assets/logo.png"))
+    
+    # Show Splash Screen
+    splash = SplashScreen()
+    splash.show()
+    
+    # Simulate loading delay to show off the logo
+    start = datetime.now()
+    while (datetime.now() - start).seconds < 2:
+        app.processEvents()
+    
     window = MainWindow()
     window.show()
+    
+    splash.finish(window)
+    
     sys.exit(app.exec())

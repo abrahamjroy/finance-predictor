@@ -1,4 +1,7 @@
-# Finance Predictor Pro (Native UI Edition)
+<div align="center">
+  <img src="assets/logo.png" alt="Finance Predictor Logo" width="120" />
+  <h1>Finance Predictor Pro (Native UI Edition)</h1>
+</div>
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/b6ca30c2-c83c-4a1d-ae02-553fde7f4e68" alt="Dashboard" width="100%" />
