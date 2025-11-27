@@ -8,13 +8,19 @@ A high-performance financial prediction desktop application built with **PyQt6**
 ## Features
 
 - **Native Performance**: Built with PyQt6 for a responsive, hardware-accelerated desktop experience.
-- **Multi-Algorithm Forecasting**: 10+ prediction models including Statistical (SMA, EMA, ARIMA, Holt-Winters), Machine Learning (Linear Regression, Random Forest, XGBoost, SVR), and Technical Indicators (RSI, Bollinger Bands).
+- **Modern Tabbed UI**: Sleek interface organized into **Dashboard**, **Analysis**, and **Charting** tabs for optimal workflow.
+- **Multi-Algorithm Forecasting**: 10+ prediction models including Statistical (SMA, EMA, ARIMA, Holt-Winters), Machine Learning (Linear Regression, Random Forest, XGBoost, SVR), and Technical Indicators.
+- **Sentiment-Adjusted Predictions**: Uses a **Bayesian-inspired drift adjustment** theorem to weight technical forecasts based on real-time news sentiment.
+- **Advanced Quantitative Analysis**:
+  - **Risk Metrics**: Value at Risk (VaR 95%), CVaR (Expected Shortfall), and Kelly Criterion.
+  - **Market Regime**: Automatically detects if the market is **Trending** or **Ranging** using ADX.
+- **Professional Charting**:
+  - **Technical Indicators**: Ichimoku Cloud, Bollinger Bands, SMA, Stochastic, ATR.
+  - **Pattern Recognition**: Auto-detects **Doji**, **Hammer**, and **Engulfing** candlestick patterns.
+  - **Correlation Matrix**: Live heatmap showing asset correlations against benchmarks (SPY, BTC, GLD).
 - **Real-time Data**: Fetches live stock, crypto, and forex data via `yfinance`.
-- **Sentiment Analysis**: NLTK VADER-based headline sentiment scoring.
 - **AI Market Analyst**: Local LLM (Phi-4 Mini Reasoning via llama-cpp-python) with automatic GPU acceleration.
-- **High-Speed Charting**: PyQtGraph-powered interactive charts with GPU acceleration and smooth rendering.
-- **Ticker Tapes**: Scrolling dot-matrix style tickers for indices and news.
-- **GPU Optimized**: Automatic NVIDIA CUDA acceleration for XGBoost and LLM inference.
+- **Optimized ML Engines**: Grid-search tuned Random Forest and XGBoost models for high-volatility assets.
 
 ## Installation
 
@@ -60,7 +66,8 @@ finance_predictor/
 ├── app.py                 # Main PyQt6 application
 ├── src/
 │   ├── data_loader.py    # Data fetching logic
-│   ├── forecasting.py    # Prediction algorithms
+│   ├── forecasting.py    # Prediction algorithms (Optimized)
+│   ├── quant_analysis.py # Risk metrics, patterns, indicators
 │   ├── sentiment.py      # Sentiment analysis
 │   ├── llm_engine.py     # LLM integration
 │   ├── inference_script.py # Isolated inference process
@@ -74,6 +81,7 @@ finance_predictor/
 - **UI**: PyQt6 (Qt for Python)
 - **Visualization**: PyQtGraph
 - **Data**: yfinance, pandas, numpy
+- **Technical Analysis**: `ta` library
 - **ML**: scikit-learn, XGBoost, statsmodels, Prophet, arch, pykalman
 - **NLP**: NLTK
 - **AI/LLM**: llama-cpp-python (Phi-4)
