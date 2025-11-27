@@ -1,12 +1,13 @@
 # Finance Predictor Pro (Native UI Edition)
 
-<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/b6ca30c2-c83c-4a1d-ae02-553fde7f4e68" />
-
-<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/8f9b9ea9-44a9-448f-b2e3-278d9c4c31cc" />
-
-<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/5a4cd3b4-6391-49ea-8000-7f82a2f2389c" />
-
-
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/b6ca30c2-c83c-4a1d-ae02-553fde7f4e68" alt="Dashboard" width="100%" />
+  
+  <p>
+    <b>Next-Gen Financial Forecasting & Analysis</b><br>
+    <i>Powered by PyQt6, XGBoost, and Local LLMs</i>
+  </p>
+</div>
 
 A high-performance financial prediction desktop application built with **PyQt6** and **PyQtGraph**, featuring 10+ forecasting algorithms, sentiment analysis, and local LLM integration for AI-powered market insights.
 
@@ -26,6 +27,21 @@ A high-performance financial prediction desktop application built with **PyQt6**
 - **Real-time Data**: Fetches live stock, crypto, and forex data via `yfinance`.
 - **AI Market Analyst**: Local LLM (Phi-4 Mini Reasoning via llama-cpp-python) with automatic GPU acceleration.
 - **Optimized ML Engines**: Grid-search tuned Random Forest and XGBoost models for high-volatility assets.
+
+## Interface Gallery
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center"><b>Advanced Analysis</b></td>
+      <td align="center"><b>Professional Charting</b></td>
+    </tr>
+    <tr>
+      <td><img src="https://github.com/user-attachments/assets/8f9b9ea9-44a9-448f-b2e3-278d9c4c31cc" alt="Analysis Tab" width="100%" /></td>
+      <td><img src="https://github.com/user-attachments/assets/5a4cd3b4-6391-49ea-8000-7f82a2f2389c" alt="Charting Tab" width="100%" /></td>
+    </tr>
+  </table>
+</div>
 
 ## Installation
 
