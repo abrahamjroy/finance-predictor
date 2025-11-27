@@ -347,48 +347,52 @@ class MainWindow(QMainWindow):
         
         content_layout.addWidget(chart_panel, stretch=1)
         
-        # Sidebar (Scrollable)
-        sidebar_scroll = QScrollArea()
-        sidebar_scroll.setWidgetResizable(True)
-        sidebar_scroll.setFixedWidth(400)
-        sidebar_scroll.setStyleSheet("""
-            QScrollArea {
-                border: none;
-                background: transparent;
+        # Sidebar (Tabbed Interface)
+        from PyQt6.QtWidgets import QTabWidget
+        self.sidebar_tabs = QTabWidget()
+        self.sidebar_tabs.setFixedWidth(400)
+        self.sidebar_tabs.setStyleSheet("""
+            QTabWidget::pane {
+                border: 1px solid #49454F;
+                border-radius: 12px;
+                background: #1C1B1F;
             }
-            QScrollBar:vertical {
-                border: none;
-                background: rgba(0,0,0,0.1);
-                width: 8px;
-                margin: 0;
+            QTabBar::tab {
+                background: #2B2930;
+                color: #CAC4D0;
+                padding: 12px 20px;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+                margin-right: 4px;
+                font-family: "SF Pro Text";
+                font-weight: bold;
             }
-            QScrollBar::handle:vertical {
-                background: rgba(255,255,255,0.2);
-                min-height: 20px;
-                border-radius: 4px;
+            QTabBar::tab:selected {
+                background: #6750A4;
+                color: white;
+            }
+            QTabBar::tab:hover {
+                background: #49454F;
             }
         """)
         
-        sidebar_content = QWidget()
-        sidebar_content.setStyleSheet("background: transparent;")
-        sidebar_layout = QVBoxLayout(sidebar_content)
-        sidebar_layout.setContentsMargins(0, 0, 20, 0) # Right padding for scrollbar
-        sidebar_layout.setSpacing(15)
+        # --- TAB 1: DASHBOARD ---
+        tab_dashboard = QWidget()
+        dash_layout = QVBoxLayout(tab_dashboard)
+        dash_layout.setSpacing(15)
+        dash_layout.setContentsMargins(15, 20, 15, 20)
         
         # Controls Section
-        controls_card = MaterialCard(elevation=2)
-        controls_layout = QVBoxLayout(controls_card)
-        
         controls_label = QLabel("⚙️ Controls")
         controls_label.setFont(QFont("SF Pro Display", 18, QFont.Weight.Bold))
         controls_label.setStyleSheet("color: white;")
-        controls_layout.addWidget(controls_label)
+        dash_layout.addWidget(controls_label)
         
         # Ticker Input
         ticker_label = QLabel("Ticker Symbol")
         ticker_label.setFont(QFont("SF Pro Text", 12))
         ticker_label.setStyleSheet("color: rgba(255, 255, 255, 0.7);")
-        controls_layout.addWidget(ticker_label)
+        dash_layout.addWidget(ticker_label)
         
         self.ticker_input = QLineEdit("AAPL")
         self.ticker_input.setFont(QFont("SF Mono", 14))
@@ -406,13 +410,13 @@ class MainWindow(QMainWindow):
             }
         """)
         self.ticker_input.returnPressed.connect(self.load_data)
-        controls_layout.addWidget(self.ticker_input)
+        dash_layout.addWidget(self.ticker_input)
         
         # Period
         period_label = QLabel("Time Period")
         period_label.setFont(QFont("SF Pro Text", 12))
         period_label.setStyleSheet("color: rgba(255, 255, 255, 0.7);")
-        controls_layout.addWidget(period_label)
+        dash_layout.addWidget(period_label)
         
         self.period_combo = QComboBox()
         self.period_combo.addItems(["1y", "2y", "5y", "max"])
@@ -436,13 +440,13 @@ class MainWindow(QMainWindow):
                 border-top: 5px solid white;
             }
         """)
-        controls_layout.addWidget(self.period_combo)
+        dash_layout.addWidget(self.period_combo)
         
         # Forecast Days
         self.days_label = QLabel("Forecast: 30 days")
         self.days_label.setFont(QFont("SF Pro Text", 12))
         self.days_label.setStyleSheet("color: rgba(255, 255, 255, 0.7);")
-        controls_layout.addWidget(self.days_label)
+        dash_layout.addWidget(self.days_label)
         
         self.days_slider = QSlider(Qt.Orientation.Horizontal)
         self.days_slider.setRange(7, 90)
@@ -462,82 +466,18 @@ class MainWindow(QMainWindow):
                 border-radius: 10px;
             }
         """)
-        controls_layout.addWidget(self.days_slider)
+        dash_layout.addWidget(self.days_slider)
         
         # Buttons
         self.run_btn = MaterialButton("🚀 Run Predictions", color="#6750A4")
         self.run_btn.clicked.connect(self.run_predictions)
-        controls_layout.addWidget(self.run_btn)
+        dash_layout.addWidget(self.run_btn)
         
-        sidebar_layout.addWidget(controls_card)
-
-        # Quant Stats
-        stats_card = MaterialCard(elevation=2)
-        stats_layout = QVBoxLayout(stats_card)
-        
-        stats_title = QLabel("📊 Quant Stats")
-        stats_title.setFont(QFont("SF Pro Display", 16, QFont.Weight.Bold))
-        stats_title.setStyleSheet("color: white;")
-        stats_layout.addWidget(stats_title)
-
-        self.stats_frame = QFrame()
-        self.stats_frame.setStyleSheet("background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 5px;")
-        self.stats_layout_inner = QVBoxLayout(self.stats_frame)
-        self.stats_labels = {}
-        for metric in ["Sharpe Ratio", "Volatility", "Max Drawdown"]:
-            lbl = QLabel(f"{metric}: --")
-            lbl.setFont(QFont("SF Pro Text", 11))
-            lbl.setStyleSheet("color: rgba(255, 255, 255, 0.8);")
-            self.stats_layout_inner.addWidget(lbl)
-            self.stats_labels[metric] = lbl
-        stats_layout.addWidget(self.stats_frame)
-        sidebar_layout.addWidget(stats_card)
-
-        # Indicators
-        ind_card = MaterialCard(elevation=2)
-        ind_layout = QVBoxLayout(ind_card)
-        
-        ind_title = QLabel("📉 Indicators")
-        ind_title.setFont(QFont("SF Pro Display", 16, QFont.Weight.Bold))
-        ind_title.setStyleSheet("color: white;")
-        ind_layout.addWidget(ind_title)
-
-        from PyQt6.QtWidgets import QCheckBox
-        self.chk_candle = QCheckBox("Candlestick Chart")
-        self.chk_sma = QCheckBox("SMA (20)")
-        self.chk_bb = QCheckBox("Bollinger Bands")
-        
-        for chk in [self.chk_candle, self.chk_sma, self.chk_bb]:
-            chk.setFont(QFont("SF Pro Text", 12))
-            chk.setStyleSheet("color: white; spacing: 8px;")
-            chk.stateChanged.connect(self.update_chart)
-            ind_layout.addWidget(chk)
-        sidebar_layout.addWidget(ind_card)
-        
-        # Sentiment
-        sent_card = MaterialCard(elevation=2)
-        sent_layout = QVBoxLayout(sent_card)
-        
-        sentiment_title = QLabel("💭 Market Sentiment")
-        sentiment_title.setFont(QFont("SF Pro Display", 16, QFont.Weight.Bold))
-        sentiment_title.setStyleSheet("color: white;")
-        sent_layout.addWidget(sentiment_title)
-        
-        self.sentiment_label = QLabel("Analyzing...")
-        self.sentiment_label.setFont(QFont("SF Pro Display", 18, QFont.Weight.Bold))
-        self.sentiment_label.setStyleSheet("color: #00FF88;")
-        self.sentiment_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        sent_layout.addWidget(self.sentiment_label)
-        sidebar_layout.addWidget(sent_card)
-        
-        # AI Chat
-        ai_card = MaterialCard(elevation=2)
-        ai_layout = QVBoxLayout(ai_card)
-        
+        # AI Chat (Moved to Dashboard for easy access)
         ai_title = QLabel("🤖 AI Assistant")
         ai_title.setFont(QFont("SF Pro Display", 16, QFont.Weight.Bold))
-        ai_title.setStyleSheet("color: white;")
-        ai_layout.addWidget(ai_title)
+        ai_title.setStyleSheet("color: white; margin-top: 20px;")
+        dash_layout.addWidget(ai_title)
         
         self.chat_history = QTextEdit()
         self.chat_history.setReadOnly(True)
@@ -551,11 +491,10 @@ class MainWindow(QMainWindow):
                 color: white;
             }
         """)
-        self.chat_history.setMinimumHeight(200) # Increased height
+        self.chat_history.setMinimumHeight(150)
         self.chat_history.setText("💬 AI ready. Ask me anything!")
-        ai_layout.addWidget(self.chat_history)
+        dash_layout.addWidget(self.chat_history)
         
-        # Chat Input
         chat_input_layout = QHBoxLayout()
         self.chat_input = QLineEdit()
         self.chat_input.setPlaceholderText("Ask a question...")
@@ -573,16 +512,100 @@ class MainWindow(QMainWindow):
         
         self.send_btn = MaterialButton("Send", color="#34C759")
         self.send_btn.setFixedSize(80, 40)
-        self.send_btn.setFont(QFont("Roboto", 12, QFont.Weight.Medium)) # Reduced font size
+        self.send_btn.setFont(QFont("Roboto", 12, QFont.Weight.Medium))
         self.send_btn.clicked.connect(self.send_chat_message)
         
         chat_input_layout.addWidget(self.chat_input)
         chat_input_layout.addWidget(self.send_btn)
-        ai_layout.addLayout(chat_input_layout)
-        sidebar_layout.addWidget(ai_card)
+        dash_layout.addLayout(chat_input_layout)
         
-        sidebar_scroll.setWidget(sidebar_content)
-        content_layout.addWidget(sidebar_scroll)
+        dash_layout.addStretch()
+        
+        # --- TAB 2: ANALYSIS ---
+        tab_analysis = QWidget()
+        analysis_layout = QVBoxLayout(tab_analysis)
+        analysis_layout.setSpacing(15)
+        analysis_layout.setContentsMargins(15, 20, 15, 20)
+        
+        # Quant Stats
+        stats_title = QLabel("📊 Quant Stats")
+        stats_title.setFont(QFont("SF Pro Display", 16, QFont.Weight.Bold))
+        stats_title.setStyleSheet("color: white;")
+        analysis_layout.addWidget(stats_title)
+
+        self.stats_frame = QFrame()
+        self.stats_frame.setStyleSheet("background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 10px;")
+        self.stats_layout_inner = QVBoxLayout(self.stats_frame)
+        self.stats_labels = {}
+        # Added Risk Metrics to this list
+        metrics_list = ["Sharpe Ratio", "Volatility", "Max Drawdown", "VaR (95%)", "CVaR (95%)", "Kelly Criterion"]
+        for metric in metrics_list:
+            lbl = QLabel(f"{metric}: --")
+            lbl.setFont(QFont("SF Pro Text", 12))
+            lbl.setStyleSheet("color: rgba(255, 255, 255, 0.9);")
+            self.stats_layout_inner.addWidget(lbl)
+            self.stats_labels[metric] = lbl
+        analysis_layout.addWidget(self.stats_frame)
+        
+        # Sentiment
+        sentiment_title = QLabel("💭 Market Sentiment")
+        sentiment_title.setFont(QFont("SF Pro Display", 16, QFont.Weight.Bold))
+        sentiment_title.setStyleSheet("color: white; margin-top: 10px;")
+        analysis_layout.addWidget(sentiment_title)
+        
+        self.sentiment_label = QLabel("Analyzing...")
+        self.sentiment_label.setFont(QFont("SF Pro Display", 18, QFont.Weight.Bold))
+        self.sentiment_label.setStyleSheet("color: #00FF88;")
+        self.sentiment_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        analysis_layout.addWidget(self.sentiment_label)
+        
+        analysis_layout.addStretch()
+
+        # --- TAB 3: CHARTING ---
+        tab_charting = QWidget()
+        chart_layout = QVBoxLayout(tab_charting)
+        chart_layout.setSpacing(15)
+        chart_layout.setContentsMargins(15, 20, 15, 20)
+        
+        ind_title = QLabel("📉 Indicators")
+        ind_title.setFont(QFont("SF Pro Display", 16, QFont.Weight.Bold))
+        ind_title.setStyleSheet("color: white;")
+        chart_layout.addWidget(ind_title)
+
+        from PyQt6.QtWidgets import QCheckBox
+        self.chk_candle = QCheckBox("Candlestick Chart")
+        self.chk_sma = QCheckBox("SMA (20)")
+        self.chk_bb = QCheckBox("Bollinger Bands")
+        self.chk_ichimoku = QCheckBox("Ichimoku Cloud")
+        self.chk_patterns = QCheckBox("Show Patterns")
+        self.chk_correlation = QCheckBox("Correlation Matrix")
+        
+        # Group checkboxes
+        self.chart_toggles = [
+            self.chk_candle, self.chk_sma, self.chk_bb, 
+            self.chk_ichimoku, self.chk_patterns, self.chk_correlation
+        ]
+        
+        for chk in self.chart_toggles:
+            chk.setFont(QFont("SF Pro Text", 12))
+            chk.setStyleSheet("""
+                QCheckBox { color: white; spacing: 8px; }
+                QCheckBox::indicator { width: 18px; height: 18px; border-radius: 4px; border: 1px solid #888; }
+                QCheckBox::indicator:checked { background: #6750A4; border: 1px solid #6750A4; }
+            """)
+            chk.stateChanged.connect(self.update_chart)
+            chart_layout.addWidget(chk)
+            
+        chart_layout.addStretch()
+
+        # Add tabs
+        self.sidebar_tabs.addTab(tab_dashboard, "Dashboard")
+        self.sidebar_tabs.addTab(tab_analysis, "Analysis")
+        self.sidebar_tabs.addTab(tab_charting, "Charting")
+        
+        content_layout.addWidget(self.sidebar_tabs)
+        content_container_layout.addLayout(content_layout)
+        layout.addWidget(content_container, stretch=1)
         content_container_layout.addLayout(content_layout)
         layout.addWidget(content_container, stretch=1)
         
@@ -676,17 +699,33 @@ class MainWindow(QMainWindow):
             
         # Calculate metrics
         metrics = self.quant_analyzer.calculate_metrics(self.df)
+        risk_metrics = self.quant_analyzer.calculate_risk_metrics(self.df)
+        regime = self.quant_analyzer.calculate_market_regime(self.df)
+        
+        metrics.update(risk_metrics)
+        metrics["Market Regime"] = regime["Regime"]
         
         # Update labels
-        if "Sharpe Ratio" in metrics:
-            self.stats_labels["Sharpe Ratio"].setText(f"Sharpe Ratio: {metrics['Sharpe Ratio']}")
-        if "Annual Volatility" in metrics:
-            self.stats_labels["Volatility"].setText(f"Volatility: {metrics['Annual Volatility']}")
-        if "Max Drawdown" in metrics:
-            self.stats_labels["Max Drawdown"].setText(f"Max Drawdown: {metrics['Max Drawdown']}")
+        for key, value in metrics.items():
+            if key == "Annual Volatility" and "Volatility" in self.stats_labels:
+                self.stats_labels["Volatility"].setText(f"Volatility: {value}")
+            elif key in self.stats_labels:
+                self.stats_labels[key].setText(f"{key}: {value}")
+            elif key == "Market Regime":
+                # Dynamic add if missing (hack for now)
+                if "Market Regime" not in self.stats_labels:
+                    lbl = QLabel(f"Market Regime: {value}")
+                    lbl.setFont(QFont("SF Pro Text", 12))
+                    lbl.setStyleSheet("color: #FFD60A; font-weight: bold;")
+                    self.stats_layout_inner.addWidget(lbl)
+                    self.stats_labels["Market Regime"] = lbl
+                else:
+                    self.stats_labels["Market Regime"].setText(f"Market Regime: {value}")
             
         # Add indicators to DF
         self.df = self.quant_analyzer.add_indicators(self.df)
+        self.df = self.quant_analyzer.add_advanced_indicators(self.df)
+        self.df = self.quant_analyzer.detect_patterns(self.df)
 
     def update_chart(self):
         try:
@@ -694,30 +733,24 @@ class MainWindow(QMainWindow):
             
             if self.df.empty:
                 return
-            
-            timestamps = [d.timestamp() for d in self.df.index]
+                
+            # Check for Correlation Mode
+            if hasattr(self, 'chk_correlation') and self.chk_correlation.isChecked():
+                self.plot_correlation_matrix()
+                return
             
             timestamps = [d.timestamp() for d in self.df.index]
             
             # Chart Type Selection
             if self.chk_candle.isChecked():
                 # Candlestick Chart
-                # Prepare data for candles
                 opens = self.df['Open'].values
                 closes = self.df['Close'].values
                 highs = self.df['High'].values
                 lows = self.df['Low'].values
                 
-                # Colors for candles
                 bullish = closes >= opens
                 bearish = ~bullish
-                
-                # Draw wicks (High to Low)
-                self.plot_widget.plot(timestamps, highs, pen=None, symbol='o', symbolSize=0) # Hidden plot to set range if needed, but mainly we draw items
-                
-                # We use ErrorBarItem for wicks or just plot lines. 
-                # A simpler way in pyqtgraph for candles is using BarGraphItem for body and PlotCurveItem for wicks, 
-                # or a custom CandlestickItem. Let's use a simplified approach with BarGraphItem for bodies and lines for wicks.
                 
                 # Wicks
                 for i in range(len(timestamps)):
@@ -726,17 +759,9 @@ class MainWindow(QMainWindow):
                     self.plot_widget.plot([t, t], [lows[i], highs[i]], pen=pg.mkPen(color, width=1))
                 
                 # Bodies
-                # Width of candle in seconds (approx 1 day minus some padding)
                 width = 24 * 60 * 60 * 0.8 
                 
-                # Bullish bodies (Close > Open) - Green
                 if np.any(bullish):
-                    # Height is abs(Close - Open), y is min(Open, Close) which is Open for bullish
-                    # But BarGraphItem takes height. 
-                    # y0 (bottom) = Open, y1 (top) = Close. 
-                    # pyqtgraph BarGraphItem: x, height, y0 (optional vertical base).
-                    
-                    # Using y0 to specify bottom of bar
                     self.plot_widget.addItem(pg.BarGraphItem(
                         x=np.array(timestamps)[bullish],
                         y0=opens[bullish],
@@ -746,9 +771,7 @@ class MainWindow(QMainWindow):
                         pen=pg.mkPen(None)
                     ))
                     
-                # Bearish bodies (Open > Close) - Red
                 if np.any(bearish):
-                    # y0 = Close, height = Open - Close
                     self.plot_widget.addItem(pg.BarGraphItem(
                         x=np.array(timestamps)[bearish],
                         y0=closes[bearish],
@@ -765,27 +788,60 @@ class MainWindow(QMainWindow):
                                     name='Historical Price',
                                     shadowPen=pg.mkPen(color='#00FF88', width=6, alpha=50))
             
-            # Indicators
+            # --- INDICATORS ---
             
-            # Indicators
+            # SMA
             if self.chk_sma.isChecked() and 'SMA_20' in self.df.columns:
                 self.plot_widget.plot(timestamps, self.df['SMA_20'].values,
                                     pen=pg.mkPen(color='#FFD60A', width=2),
                                     name='SMA (20)')
                                     
+            # Bollinger Bands
             if self.chk_bb.isChecked() and 'BB_High' in self.df.columns:
-                # Plot High and Low bands
                 high_plot = self.plot_widget.plot(timestamps, self.df['BB_High'].values,
                                     pen=pg.mkPen(color='rgba(255,255,255,0.3)', width=1),
                                     name='BB High')
                 low_plot = self.plot_widget.plot(timestamps, self.df['BB_Low'].values,
                                     pen=pg.mkPen(color='rgba(255,255,255,0.3)', width=1),
                                     name='BB Low')
-                
-                # Fill between bands
                 fill = pg.FillBetweenItem(low_plot, high_plot, brush=pg.mkBrush(255, 255, 255, 30))
                 self.plot_widget.addItem(fill)
-            
+                
+            # Ichimoku Cloud
+            if hasattr(self, 'chk_ichimoku') and self.chk_ichimoku.isChecked() and 'Ichimoku_SpanA' in self.df.columns:
+                # Plot lines
+                self.plot_widget.plot(timestamps, self.df['Ichimoku_Conversion'].values, pen=pg.mkPen('#00B4D8', width=1.5), name="Tenkan")
+                self.plot_widget.plot(timestamps, self.df['Ichimoku_Base'].values, pen=pg.mkPen('#D00000', width=1.5), name="Kijun")
+                
+                # Plot Spans and Fill
+                span_a = self.plot_widget.plot(timestamps, self.df['Ichimoku_SpanA'].values, pen=pg.mkPen(None))
+                span_b = self.plot_widget.plot(timestamps, self.df['Ichimoku_SpanB'].values, pen=pg.mkPen(None))
+                
+                # Fill Cloud (Green if A > B, Red if B > A)
+                # pyqtgraph FillBetweenItem is simple, for complex crossovers we use a generic semi-transparent fill
+                fill = pg.FillBetweenItem(span_a, span_b, brush=pg.mkBrush(100, 100, 255, 50))
+                self.plot_widget.addItem(fill)
+
+            # Patterns
+            if hasattr(self, 'chk_patterns') and self.chk_patterns.isChecked():
+                for i in range(len(timestamps)):
+                    t = timestamps[i]
+                    val = self.df['High'].iloc[i]
+                    
+                    if self.df['Pattern_Doji'].iloc[i]:
+                        text = pg.TextItem("😒", anchor=(0.5, 1), color="#FFD60A")
+                        text.setPos(t, val)
+                        self.plot_widget.addItem(text)
+                    elif self.df['Pattern_Hammer'].iloc[i]:
+                        text = pg.TextItem("🔨", anchor=(0.5, 1))
+                        text.setPos(t, val)
+                        self.plot_widget.addItem(text)
+                    elif self.df['Pattern_Engulfing'].iloc[i]:
+                        text = pg.TextItem("🔥", anchor=(0.5, 1))
+                        text.setPos(t, val)
+                        self.plot_widget.addItem(text)
+
+            # Predictions
             # Predictions
             if self.predictions:
                 future_dates = pd.date_range(start=self.df.index[-1] + pd.Timedelta(days=1), 
@@ -794,22 +850,102 @@ class MainWindow(QMainWindow):
                 
                 colors = ['#FF3B30', '#007AFF', '#34C759', '#FFD60A', '#FF9500']
                 
-                for i, (name, values) in enumerate(self.predictions.items()):
-                    color = colors[i % len(colors)]
+                # Plot individual models
+                idx = 0
+                for name, values in self.predictions.items():
+                    if name.startswith("ENSEMBLE"):
+                        continue
+                        
+                    color = colors[idx % len(colors)]
                     self.plot_widget.plot(future_timestamps, values,
-                                        pen=pg.mkPen(color=color, width=2, style=Qt.PenStyle.DashLine),
+                                        pen=pg.mkPen(color=color, width=1, style=Qt.PenStyle.DotLine),
                                         name=name)
+                    idx += 1
                 
-                avg_pred = np.mean(list(self.predictions.values()), axis=0)
-                self.plot_widget.plot(future_timestamps, avg_pred,
-                                    pen=pg.mkPen(color='#FFD60A', width=4),
-                                    name='ENSEMBLE',
-                                    shadowPen=pg.mkPen(color='#FFD60A', width=8, alpha=50))
+                # Plot Ensembles
+                if 'ENSEMBLE (Technical)' in self.predictions:
+                    self.plot_widget.plot(future_timestamps, self.predictions['ENSEMBLE (Technical)'],
+                                        pen=pg.mkPen(color='#FFD60A', width=2, style=Qt.PenStyle.DashLine),
+                                        name='Technical Avg')
+                                        
+                if 'ENSEMBLE (Sentiment Adjusted)' in self.predictions:
+                    self.plot_widget.plot(future_timestamps, self.predictions['ENSEMBLE (Sentiment Adjusted)'],
+                                        pen=pg.mkPen(color='#00FF88', width=4), # Green/Gold for main
+                                        name='Sentiment Adjusted',
+                                        shadowPen=pg.mkPen(color='#00FF88', width=8, alpha=50))
             
             self.plot_widget.setTitle(f"{self.ticker} Price Analysis", color='w', size='14pt')
             
         except Exception as e:
             print(f"Chart error: {e}")
+
+    def plot_correlation_matrix(self):
+        """Fetches and plots correlation matrix."""
+        self.plot_widget.clear()
+        
+        # Show loading
+        text = pg.TextItem("Calculating Correlation Matrix...\n(Fetching data for SPY, BTC, GLD, etc.)", anchor=(0.5, 0.5), color="white")
+        text.setFont(QFont("SF Pro Display", 16))
+        self.plot_widget.addItem(text)
+        self.plot_widget.autoRange() # Ensure loading text is visible
+        QApplication.processEvents()
+        
+        try:
+            # Calculate
+            corr_df = self.quant_analyzer.calculate_correlation(self.ticker)
+            
+            self.plot_widget.clear()
+            if corr_df.empty:
+                text = pg.TextItem("Failed to calculate correlation.\nCheck internet connection.", anchor=(0.5, 0.5), color="#FF3B30")
+                self.plot_widget.addItem(text)
+                self.plot_widget.autoRange()
+                return
+                
+            # Plot Heatmap
+            # Prepare data (flip y for correct orientation)
+            data = corr_df.values
+            
+            # Create ImageItem
+            img = pg.ImageItem(data)
+            
+            # Colormap (Red to Blue)
+            pos = np.array([0.0, 0.5, 1.0])
+            color = np.array([[255, 59, 48, 255], [255, 255, 255, 255], [0, 122, 255, 255]], dtype=np.ubyte)
+            map = pg.ColorMap(pos, color)
+            img.setLookupTable(map.getLookupTable(0.0, 1.0, 256))
+            
+            self.plot_widget.addItem(img)
+            
+            # Add labels
+            cols = corr_df.columns
+            for i in range(len(cols)):
+                # X Axis
+                lbl = pg.TextItem(cols[i], anchor=(0.5, 0), color="white", angle=0)
+                lbl.setPos(i + 0.5, len(cols))
+                self.plot_widget.addItem(lbl)
+                
+                # Y Axis
+                lbl = pg.TextItem(cols[i], anchor=(1, 0.5), color="white")
+                lbl.setPos(0, i + 0.5)
+                self.plot_widget.addItem(lbl)
+                
+                # Values in cells
+                for j in range(len(cols)):
+                    val = data[j, i] # Transposed access for visual
+                    txt = pg.TextItem(f"{val:.2f}", anchor=(0.5, 0.5), color="black")
+                    txt.setPos(i + 0.5, j + 0.5)
+                    self.plot_widget.addItem(txt)
+            
+            # CRITICAL: Reset view range to show the 7x7 matrix
+            self.plot_widget.autoRange()
+            self.plot_widget.setTitle(f"{self.ticker} Correlation Matrix", color='w', size='14pt')
+            
+        except Exception as e:
+            print(f"Correlation plot error: {e}")
+            self.plot_widget.clear()
+            text = pg.TextItem(f"Error: {str(e)}", anchor=(0.5, 0.5), color="red")
+            self.plot_widget.addItem(text)
+            self.plot_widget.autoRange()
 
     def run_predictions(self):
         if self.df.empty:
@@ -855,10 +991,36 @@ class MainWindow(QMainWindow):
                         preds[name] = values
                     
             if preds:
+                # 1. Calculate Raw Ensemble
+                ensemble_values = np.mean(list(preds.values()), axis=0)
+                preds['ENSEMBLE (Technical)'] = ensemble_values
+                
+                # 2. Apply Sentiment Adjustment (Bayesian Drift)
+                try:
+                    sentiment_score = self.sentiment_analyzer.analyze_news(self.news)
+                    
+                    # Calculate volatility (annualized)
+                    returns = self.df['Close'].pct_change().dropna()
+                    volatility = returns.std() * np.sqrt(252) if not returns.empty else 0.2
+                    
+                    adjusted_ensemble = self.forecaster.apply_sentiment_adjustment(
+                        ensemble_values, sentiment_score, volatility
+                    )
+                    
+                    preds['ENSEMBLE (Sentiment Adjusted)'] = adjusted_ensemble
+                    
+                    # Log for user visibility
+                    print(f"Sentiment Score: {sentiment_score:.2f}, Volatility: {volatility:.2%}")
+                    print(f"Applied drift adjustment to ensemble.")
+                    
+                except Exception as e:
+                    print(f"Sentiment adjustment failed: {e}")
+                    preds['ENSEMBLE (Sentiment Adjusted)'] = ensemble_values
+
                 self.predictions = preds
                 self.update_chart()
                 QMessageBox.information(self, "✅ Success", 
-                    f"Generated predictions using {len(preds)} models!")
+                    f"Generated predictions using {len(preds)} models!\nSentiment Drift Applied.")
             else:
                 QMessageBox.warning(self, "⚠️ No Predictions", "All models failed.")
         except Exception as e:

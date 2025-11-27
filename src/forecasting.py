@@ -92,10 +92,18 @@ class ForecastEngine:
         return pd.Series(preds, name="Linear Reg")
 
     def predict_rf(self, df: pd.DataFrame, days: int = 30) -> pd.Series:
-        """Random Forest Regressor."""
+        """Random Forest Regressor (Optimized)."""
         lookback = 5
         X, y, scaler = self._prepare_ml_features(df, lookback)
-        model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+        
+        # Optimized Params: n_estimators=100, max_depth=20, min_samples_split=5
+        model = RandomForestRegressor(
+            n_estimators=100, 
+            max_depth=20, 
+            min_samples_split=5, 
+            n_jobs=-1, 
+            random_state=42
+        )
         model.fit(X, y.ravel())
         
         last_window = df['Close'].values[-lookback:].reshape(1, -1)
@@ -113,17 +121,29 @@ class ForecastEngine:
         return pd.Series(preds, name="Random Forest")
 
     def predict_xgboost(self, df: pd.DataFrame, days: int = 30) -> pd.Series:
-        """XGBoost Regressor."""
+        """XGBoost Regressor (Optimized)."""
         lookback = 5
         X, y, scaler = self._prepare_ml_features(df, lookback)
         
+        # Optimized Params: n_estimators=50, learning_rate=0.1, max_depth=3
         try:
             # Try GPU acceleration first (NVIDIA CUDA)
-            model = xgb.XGBRegressor(n_estimators=100, device="cuda", tree_method="hist")
+            model = xgb.XGBRegressor(
+                n_estimators=50, 
+                learning_rate=0.1, 
+                max_depth=3,
+                device="cuda", 
+                tree_method="hist"
+            )
             model.fit(X, y)
         except Exception as e:
             logger.warning(f"XGBoost GPU failed, falling back to CPU: {e}")
-            model = xgb.XGBRegressor(n_estimators=100, n_jobs=-1)
+            model = xgb.XGBRegressor(
+                n_estimators=50, 
+                learning_rate=0.1, 
+                max_depth=3,
+                n_jobs=-1
+            )
             model.fit(X, y)
         
         last_window = df['Close'].values[-lookback:].reshape(1, -1)
@@ -399,3 +419,49 @@ class ForecastEngine:
                 logger.error(f"Model {name} failed: {e}")
                 
         return pd.DataFrame(results)
+
+    def apply_sentiment_adjustment(self, ensemble_preds: np.ndarray, sentiment_score: float, volatility: float) -> np.ndarray:
+        """
+        Adjusts the ensemble forecast using a Bayesian-inspired approach (Black-Litterman intuition).
+        
+        Theorem:
+        We treat the Technical Forecast as the 'Prior' belief about future price path.
+        We treat Sentiment as a 'View' or new evidence with its own implied drift.
+        
+        Model: Geometric Brownian Motion drift adjustment.
+        New_Drift = Old_Drift + (Sentiment_Score * Volatility * Impact_Factor)
+        
+        Args:
+            ensemble_preds: Array of predicted prices from technical models.
+            sentiment_score: Float between -1.0 and 1.0.
+            volatility: Annualized volatility (float).
+            
+        Returns:
+            np.ndarray: Adjusted price predictions.
+        """
+        if sentiment_score == 0:
+            return ensemble_preds
+            
+        # Convert annualized volatility to daily for the forecast period steps
+        # Assuming 252 trading days
+        daily_vol = volatility / np.sqrt(252)
+        
+        # Impact Factor: How much we trust sentiment vs technicals.
+        # A factor of 0.5 means a max sentiment (1.0) can shift daily drift by 0.5 standard deviations.
+        impact_factor = 0.5 
+        
+        # Calculate the sentiment-induced drift (per day)
+        # If sentiment is positive, we add upward drift. If negative, downward.
+        sentiment_drift = sentiment_score * daily_vol * impact_factor
+        
+        # Apply drift cumulatively over the forecast horizon
+        # P_adj[t] = P_tech[t] * exp(sentiment_drift * t)
+        # Using simple compounding for robustness: P_adj[t] = P_tech[t] * (1 + sentiment_drift)^t
+        
+        days = len(ensemble_preds)
+        time_steps = np.arange(1, days + 1)
+        
+        # Adjustment vector
+        adjustment = (1 + sentiment_drift) ** time_steps
+        
+        return ensemble_preds * adjustment
