@@ -78,12 +78,12 @@ run_app.bat
 
 # Or manually
 python app.py
+```
 
 ### Headless Mode (WIP)
 Run in terminal without GUI:
 ```bash
 python app.py --headless
-```
 ```
 
 ### LLM Model Setup
