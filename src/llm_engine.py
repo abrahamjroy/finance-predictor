@@ -67,7 +67,13 @@ class LLMEngine:
             process.wait()
             
             if stderr:
-                logger.warning(f"LLM Subprocess Stderr: {stderr}")
+                # Filter out benign warnings from llama.cpp
+                if "n_ctx_per_seq" in stderr and "full capacity" in stderr:
+                    pass # Ignore this specific warning
+                elif "llama_kv_cache_unified" in stderr:
+                    pass # Ignore V cache warning
+                else:
+                    logger.warning(f"LLM Subprocess Stderr: {stderr}")
                 
             if process.returncode != 0:
                 logger.error(f"LLM Subprocess failed with code {process.returncode}")

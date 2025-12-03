@@ -43,7 +43,8 @@ class ForecastEngine:
             "Monte Carlo": self.predict_monte_carlo,
             "LSTM Deep Learning": self.predict_lstm,
             "Prophet (FB)": self.predict_prophet,
-            "Ensemble Stacked": self.predict_ensemble
+            "Ensemble Stacked": self.predict_ensemble,
+            "CNN-GAF": self.predict_cnn_gaf
         }
 
     def _prepare_ml_features(self, df: pd.DataFrame, lookback: int = 5) -> Tuple[np.ndarray, np.ndarray, StandardScaler]:
@@ -408,6 +409,23 @@ class ForecastEngine:
         except Exception as e:
             logger.warning(f"Ensemble failed: {e}")
             return pd.Series([df['Close'].iloc[-1]] * days, name="Ensemble")
+
+    def predict_cnn_gaf(self, df: pd.DataFrame, days: int = 30) -> pd.Series:
+        """
+        Computer Vision Forecasting:
+        Transforms time series into Gramian Angular Fields (images)
+        and uses a CNN to predict future values.
+        """
+        try:
+            from .cv_forecasting import CVForecaster
+            forecaster = CVForecaster()
+            return forecaster.predict(df, days)
+        except ImportError:
+            logger.warning("CVForecaster dependencies not found (pyts/torch). Skipping.")
+            return pd.Series([df['Close'].iloc[-1]] * days, name="CNN-GAF")
+        except Exception as e:
+            logger.warning(f"CNN-GAF failed: {e}")
+            return pd.Series([df['Close'].iloc[-1]] * days, name="CNN-GAF")
 
     def get_all_predictions(self, df: pd.DataFrame, days: int = 30) -> pd.DataFrame:
         """Runs all models and returns a DataFrame of predictions."""

@@ -18,7 +18,7 @@ A high-performance financial prediction desktop application built with **PyQt6**
 
 - **Native Performance**: Built with PyQt6 for a responsive, hardware-accelerated desktop experience.
 - **Modern Tabbed UI**: Sleek interface organized into **Dashboard**, **Analysis**, and **Charting** tabs for optimal workflow.
-- **Multi-Algorithm Forecasting**: 10+ prediction models including Statistical (SMA, EMA, ARIMA, Holt-Winters), Machine Learning (Linear Regression, Random Forest, XGBoost, SVR), and Technical Indicators.
+- **Multi-Algorithm Forecasting**: 10+ prediction models including Statistical (SMA, EMA, ARIMA, Holt-Winters), Machine Learning (Linear Regression, Random Forest, XGBoost, SVR), and **Computer Vision (CNN-GAF)**.
 - **Sentiment-Adjusted Predictions**: Uses a **Bayesian-inspired drift adjustment** theorem to weight technical forecasts based on real-time news sentiment.
 - **Advanced Quantitative Analysis**:
   - **Risk Metrics**: Value at Risk (VaR 95%), CVaR (Expected Shortfall), and Kelly Criterion.
@@ -28,7 +28,8 @@ A high-performance financial prediction desktop application built with **PyQt6**
   - **Pattern Recognition**: Auto-detects **Doji**, **Hammer**, and **Engulfing** candlestick patterns.
   - **Correlation Matrix**: Live heatmap showing asset correlations against benchmarks (SPY, BTC, GLD).
 - **Real-time Data**: Fetches live stock, crypto, and forex data via `yfinance`.
-- **AI Market Analyst**: Local LLM (Phi-4 Mini Reasoning via llama-cpp-python) with automatic GPU acceleration.
+- **Agentic AI Copilot**: Autonomous AI agent capable of controlling the application (loading tickers, running predictions, adjusting settings) via natural language commands.
+- **Advanced Reasoning Model**: Powered by **Granite 4.0 Reasoning** (IBM) for deep financial analysis and planning.
 - **Optimized ML Engines**: Grid-search tuned Random Forest and XGBoost models for high-volatility assets.
 
 ## Interface Gallery
@@ -77,11 +78,17 @@ run_app.bat
 
 # Or manually
 python app.py
+
+### Headless Mode (WIP)
+Run in terminal without GUI:
+```bash
+python app.py --headless
+```
 ```
 
 ### LLM Model Setup
-Place your Phi-4 model file in the `models/` directory:
-- `Phi-4-mini-reasoning-Q4_K_M.gguf`
+Place your Granite 4.0 model file in the `models/` directory:
+- `granite-4.0-h-tiny-adaptive-reasoning.i1-IQ4_XS.gguf`
 
 ## Project Structure
 
@@ -91,6 +98,7 @@ finance_predictor/
 ├── src/
 │   ├── data_loader.py    # Data fetching logic
 │   ├── forecasting.py    # Prediction algorithms (Optimized)
+│   ├── cv_forecasting.py # Computer Vision forecasting (CNN-GAF)
 │   ├── quant_analysis.py # Risk metrics, patterns, indicators
 │   ├── sentiment.py      # Sentiment analysis
 │   ├── llm_engine.py     # LLM integration
@@ -107,8 +115,9 @@ finance_predictor/
 - **Data**: yfinance, pandas, numpy
 - **Technical Analysis**: `ta` library
 - **ML**: scikit-learn, XGBoost, statsmodels, Prophet, arch, pykalman
+- **Computer Vision**: PyTorch, pyts (Gramian Angular Fields)
 - **NLP**: NLTK
-- **AI/LLM**: llama-cpp-python (Phi-4)
+- **AI/LLM**: llama-cpp-python (Granite 4.0 Reasoning)
 
 ## License
 

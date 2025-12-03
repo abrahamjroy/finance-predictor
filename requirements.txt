@@ -13,3 +13,6 @@ llama-cpp-python
 arch
 pykalman
 scipy
+pyts
+torch
+torchvision

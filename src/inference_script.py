@@ -9,7 +9,7 @@ from pathlib import Path
 
 def get_model_path():
     # Assuming script is run from project root
-    return Path("models") / "Phi-4-mini-reasoning-Q4_K_M.gguf"
+    return Path("models") / "granite-4.0-h-tiny-adaptive-reasoning.i1-IQ4_XS.gguf"
 
 def get_optimal_threads():
     try:
@@ -48,10 +48,10 @@ def load_model_and_infer(prompt):
             model = Llama(
                 model_path=str(model_path),
                 n_gpu_layers=layers,
-                n_ctx=4096,
+                n_ctx=16384, 
                 n_threads=get_optimal_threads(),
-                verbose=False, # Keep stderr clean
-                model_type="phi"
+                verbose=False, 
+                flash_attn=True # Enable Flash Attention for Granite
             )
             used_strategy = mode
             break # Success
@@ -65,7 +65,31 @@ def load_model_and_infer(prompt):
 
     # Inference with streaming
     messages = [
-        {"role": "system", "content": "You are a helpful financial analyst. Be concise."},
+        {"role": "system", "content": """You are an autonomous financial agent.
+Your goal is to assist the user by controlling the application using specific JSON commands.
+
+TOOLS AVAILABLE:
+- load_ticker(symbol): Load a stock. JSON: {"tool": "load_ticker", "params": {"symbol": "TICKER"}}
+- run_predictions(): Run models. JSON: {"tool": "run_predictions"}
+- set_forecast_days(days): Set horizon. JSON: {"tool": "set_forecast_days", "params": {"days": 30}}
+- show_chart_indicator(indicator): Toggle indicator. JSON: {"tool": "show_chart_indicator", "params": {"indicator": "SMA"}}
+
+CRITICAL INSTRUCTION:
+You are a Reasoning Model. You will naturally think about the problem first.
+That is fine, BUT YOU MUST END YOUR RESPONSE WITH THE JSON COMMANDS.
+If you do not output the JSON block, the application will do nothing.
+
+FORMAT:
+[Optional: Your reasoning text...]
+
+```json
+[
+  {"tool": "load_ticker", "params": {"symbol": "NVDA"}},
+  {"tool": "set_forecast_days", "params": {"days": 15}},
+  {"tool": "run_predictions"}
+]
+```
+"""},
         {"role": "user", "content": prompt},
     ]
 

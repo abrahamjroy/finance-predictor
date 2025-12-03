@@ -258,6 +258,10 @@ class AIThread(QThread):
         except Exception as e:
             self.analysis_ready.emit(f"Error: {e}")
 
+class DateAxisItem(pg.AxisItem):
+    def tickStrings(self, values, scale, spacing):
+        return [datetime.fromtimestamp(value).strftime("%Y-%m-%d") for value in values]
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -332,12 +336,12 @@ class MainWindow(QMainWindow):
         chart_panel_layout.setContentsMargins(20, 20, 20, 20)
         
         # Title
-        title_label = QLabel(f"📈 {self.ticker} Analysis")
-        title_label.setFont(QFont("SF Pro Display", 24, QFont.Weight.Bold))
-        title_label.setStyleSheet("color: white;")
-        chart_panel_layout.addWidget(title_label)
+        self.chart_title_label = QLabel(f"📈 {self.ticker} Analysis")
+        self.chart_title_label.setFont(QFont("SF Pro Display", 24, QFont.Weight.Bold))
+        self.chart_title_label.setStyleSheet("color: white;")
+        chart_panel_layout.addWidget(self.chart_title_label)
         
-        self.plot_widget = pg.PlotWidget()
+        self.plot_widget = pg.PlotWidget(axisItems={'bottom': DateAxisItem(orientation='bottom')})
         self.plot_widget.setBackground('transparent')
         self.plot_widget.showGrid(x=True, y=True, alpha=0.2)
         self.plot_widget.setLabel('left', 'Price ($)', color='white', size='11pt')
@@ -406,7 +410,7 @@ class MainWindow(QMainWindow):
             }
             QLineEdit:focus {
                 background: rgba(255, 255, 255, 0.15);
-                border: 1px solid rgba(0, 122, 255, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.5);
             }
         """)
         self.ticker_input.returnPressed.connect(self.load_data)
@@ -459,7 +463,7 @@ class MainWindow(QMainWindow):
                 border-radius: 3px;
             }
             QSlider::handle:horizontal {
-                background: #007AFF;
+                background: #FFFFFF;
                 width: 20px;
                 height: 20px;
                 margin: -7px 0;
@@ -469,7 +473,7 @@ class MainWindow(QMainWindow):
         dash_layout.addWidget(self.days_slider)
         
         # Buttons
-        self.run_btn = MaterialButton("🚀 Run Predictions", color="#6750A4")
+        self.run_btn = MaterialButton("🚀 Run Predictions", color="#333333")
         self.run_btn.clicked.connect(self.run_predictions)
         dash_layout.addWidget(self.run_btn)
         
@@ -620,9 +624,9 @@ class MainWindow(QMainWindow):
             QMainWindow, #MainWidget {
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:1,
-                    stop:0 #0A0E27,
-                    stop:0.5 #1A1F3A,
-                    stop:1 #0F1419
+                    stop:0 #000000,
+                    stop:0.5 #0A0A0A,
+                    stop:1 #121212
                 );
             }
         """)
@@ -660,6 +664,9 @@ class MainWindow(QMainWindow):
             self.df = DataLoader.fetch_history(ticker, period)
             self.news = DataLoader.fetch_news(ticker)
             self.ticker = ticker
+            
+            # Update Title
+            self.chart_title_label.setText(f"📈 {self.ticker} Analysis")
             
             self.update_chart()
             self.update_sentiment()
@@ -799,10 +806,10 @@ class MainWindow(QMainWindow):
             # Bollinger Bands
             if self.chk_bb.isChecked() and 'BB_High' in self.df.columns:
                 high_plot = self.plot_widget.plot(timestamps, self.df['BB_High'].values,
-                                    pen=pg.mkPen(color='rgba(255,255,255,0.3)', width=1),
+                                    pen=pg.mkPen(color=(255,255,255,76), width=1),
                                     name='BB High')
                 low_plot = self.plot_widget.plot(timestamps, self.df['BB_Low'].values,
-                                    pen=pg.mkPen(color='rgba(255,255,255,0.3)', width=1),
+                                    pen=pg.mkPen(color=(255,255,255,76), width=1),
                                     name='BB Low')
                 fill = pg.FillBetweenItem(low_plot, high_plot, brush=pg.mkBrush(255, 255, 255, 30))
                 self.plot_widget.addItem(fill)
@@ -844,11 +851,19 @@ class MainWindow(QMainWindow):
             # Predictions
             # Predictions
             if self.predictions:
+                # Get last historical point for continuity
+                last_ts = timestamps[-1]
+                last_val = self.df['Close'].iloc[-1]
+
                 future_dates = pd.date_range(start=self.df.index[-1] + pd.Timedelta(days=1), 
                                             periods=self.days_slider.value())
                 future_timestamps = [d.timestamp() for d in future_dates]
                 
-                colors = ['#FF3B30', '#007AFF', '#34C759', '#FFD60A', '#FF9500']
+                # Combine for plotting
+                plot_timestamps = [last_ts] + future_timestamps
+                
+                # Colors: Red, White, Green, Gold, Orange (No Blue)
+                colors = ['#FF3B30', '#FFFFFF', '#34C759', '#FFD60A', '#FF9500']
                 
                 # Plot individual models
                 idx = 0
@@ -857,19 +872,24 @@ class MainWindow(QMainWindow):
                         continue
                         
                     color = colors[idx % len(colors)]
-                    self.plot_widget.plot(future_timestamps, values,
+                    # Prepend last value
+                    plot_values = [last_val] + list(values)
+                    
+                    self.plot_widget.plot(plot_timestamps, plot_values,
                                         pen=pg.mkPen(color=color, width=1, style=Qt.PenStyle.DotLine),
                                         name=name)
                     idx += 1
                 
                 # Plot Ensembles
                 if 'ENSEMBLE (Technical)' in self.predictions:
-                    self.plot_widget.plot(future_timestamps, self.predictions['ENSEMBLE (Technical)'],
+                    vals = [last_val] + list(self.predictions['ENSEMBLE (Technical)'])
+                    self.plot_widget.plot(plot_timestamps, vals,
                                         pen=pg.mkPen(color='#FFD60A', width=2, style=Qt.PenStyle.DashLine),
                                         name='Technical Avg')
                                         
                 if 'ENSEMBLE (Sentiment Adjusted)' in self.predictions:
-                    self.plot_widget.plot(future_timestamps, self.predictions['ENSEMBLE (Sentiment Adjusted)'],
+                    vals = [last_val] + list(self.predictions['ENSEMBLE (Sentiment Adjusted)'])
+                    self.plot_widget.plot(plot_timestamps, vals,
                                         pen=pg.mkPen(color='#00FF88', width=4), # Green/Gold for main
                                         name='Sentiment Adjusted',
                                         shadowPen=pg.mkPen(color='#00FF88', width=8, alpha=50))
@@ -908,9 +928,9 @@ class MainWindow(QMainWindow):
             # Create ImageItem
             img = pg.ImageItem(data)
             
-            # Colormap (Red to Blue)
+            # Colormap (Red to Black to Green)
             pos = np.array([0.0, 0.5, 1.0])
-            color = np.array([[255, 59, 48, 255], [255, 255, 255, 255], [0, 122, 255, 255]], dtype=np.ubyte)
+            color = np.array([[255, 59, 48, 255], [0, 0, 0, 255], [52, 199, 89, 255]], dtype=np.ubyte)
             map = pg.ColorMap(pos, color)
             img.setLookupTable(map.getLookupTable(0.0, 1.0, 256))
             
@@ -1044,9 +1064,25 @@ class MainWindow(QMainWindow):
         
         context = f"Stock: {self.ticker}\n"
         if not self.df.empty:
-            context += f"Price: ${self.df['Close'].iloc[-1]:.2f}\n"
+            context += f"Current Price: ${self.df['Close'].iloc[-1]:.2f}\n"
+            
+        # Add News Context
+        if self.news:
+            context += "\nRecent News:\n"
+            for n in self.news[:3]: # Top 3 articles
+                context += f"- {n['title']} ({n['publisher']})\n"
+                
+        # Add Prediction Context
+        if self.predictions:
+            context += "\nModel Predictions:\n"
+            if 'ENSEMBLE (Sentiment Adjusted)' in self.predictions:
+                preds = self.predictions['ENSEMBLE (Sentiment Adjusted)']
+                context += f"- Sentiment Adjusted Forecast (Next {len(preds)} days): Starts ${preds[0]:.2f}, Ends ${preds[-1]:.2f}\n"
+            elif 'ENSEMBLE (Technical)' in self.predictions:
+                preds = self.predictions['ENSEMBLE (Technical)']
+                context += f"- Technical Forecast: Ends ${preds[-1]:.2f}\n"
         
-        prompt = f"{context}\nQ: {message}\nA:"
+        prompt = f"{context}\nUser Request: {message}\n\nResponse (if action needed, provide JSON):"
         
         self.ai_thread = AIThread(self.llm_engine, prompt)
         self.ai_thread.analysis_ready.connect(self.display_ai_response)
@@ -1065,8 +1101,81 @@ class MainWindow(QMainWindow):
             lines = lines[:-2]
             self.chat_history.setText('\n'.join(lines))
         
-        self.append_chat("🤖", response)
+        # Robust JSON Extraction
+        import json
+        import re
+        
+        commands_to_execute = []
+        
+        # Strategy 1: Extract from Markdown Code Blocks
+        code_blocks = re.findall(r'```json\s*(.*?)\s*```', response, re.DOTALL)
+        for block in code_blocks:
+            try:
+                parsed = json.loads(block)
+                if isinstance(parsed, list):
+                    commands_to_execute.extend(parsed)
+                elif isinstance(parsed, dict):
+                    commands_to_execute.append(parsed)
+            except json.JSONDecodeError:
+                # If block isn't valid JSON, try to find objects inside it
+                objs = re.findall(r'(\{.*?\})', block, re.DOTALL)
+                for obj_str in objs:
+                    try:
+                        cmd = json.loads(obj_str)
+                        commands_to_execute.append(cmd)
+                    except: pass
 
+        # Strategy 2: If no code blocks, look for raw JSON objects in text
+        if not commands_to_execute:
+             raw_matches = re.finditer(r'(\{.*?\"tool\":.*?\})', response, re.DOTALL)
+             for match in raw_matches:
+                 try:
+                     cmd = json.loads(match.group(1))
+                     commands_to_execute.append(cmd)
+                 except: pass
+
+        executed_any = False
+        for command in commands_to_execute:
+            try:
+                tool = command.get("tool")
+                params = command.get("params", {})
+                
+                self.append_chat("🤖", f"Executing: {tool}...")
+                executed_any = True
+                
+                if tool == "load_ticker":
+                    symbol = params.get("symbol")
+                    if symbol:
+                        self.ticker_input.setText(symbol)
+                        self.load_data()
+                        self.append_chat("🤖", f"Loaded data for {symbol}.")
+                        
+                elif tool == "run_predictions":
+                    self.run_predictions()
+                    self.append_chat("🤖", "Predictions generated.")
+                    
+                elif tool == "set_forecast_days":
+                    days = int(params.get("days", 30))
+                    self.days_slider.setValue(days)
+                    self.append_chat("🤖", f"Forecast horizon set to {days} days.")
+                    
+                elif tool == "show_chart_indicator":
+                    ind = params.get("indicator")
+                    if ind == "SMA": self.chk_sma.setChecked(not self.chk_sma.isChecked())
+                    elif ind == "Bollinger": self.chk_bb.setChecked(not self.chk_bb.isChecked())
+                    elif ind == "Ichimoku": self.chk_ichimoku.setChecked(not self.chk_ichimoku.isChecked())
+                    elif ind == "Candle": self.chk_candle.setChecked(not self.chk_candle.isChecked())
+                    self.update_chart()
+                    self.append_chat("🤖", f"Toggled indicator: {ind}")
+                    
+            except Exception as e:
+                self.append_chat("🤖", f"Tool execution failed: {e}")
+
+        if not executed_any:
+            self.append_chat("🤖", response)
+        else:
+            # If we executed commands, we don't show the raw JSON response
+            pass
 class SplashScreen(QSplashScreen):
     def __init__(self):
         super().__init__()
@@ -1082,6 +1191,16 @@ class SplashScreen(QSplashScreen):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--headless", action="store_true", help="Run in terminal mode without GUI")
+    args = parser.parse_args()
+    
+    if args.headless:
+        from src.headless import run_headless
+        run_headless()
+        sys.exit(0)
+
     app = QApplication(sys.argv)
     
     # Set app-wide font
