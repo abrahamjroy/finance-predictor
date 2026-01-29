@@ -1,4 +1,5 @@
 import sys
+from src import suppress_warnings  # Suppress noisy warnings first
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import pandas as pd
@@ -269,7 +270,27 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.resize(1600, 1000)
+        
+        # Enable Windows Aero Snap and multitasking features for frameless windows
+        if sys.platform == 'win32':
+            import ctypes
+            from ctypes import wintypes
+            
+            # Get window handle
+            hwnd = int(self.winId())
+            
+            # Enable Aero Snap, Snap Assist, and multitasking view
+            # WS_THICKFRAME allows resize and snap features
+            GWL_STYLE = -16
+            WS_THICKFRAME = 0x00040000
+            WS_CAPTION = 0x00C00000
+            
+            # Get current style
+            style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
+            
+            # Add thick frame for snap support (but keep frameless appearance)
+            new_style = style | WS_THICKFRAME | WS_CAPTION
+            ctypes.windll.user32.SetWindowLongW(hwnd, GWL_STYLE, new_style)
         
         # State
         self.ticker = "AAPL"
@@ -888,9 +909,9 @@ class MainWindow(QMainWindow):
                 if 'ENSEMBLE (Sentiment Adjusted)' in self.predictions:
                     vals = [last_val] + list(self.predictions['ENSEMBLE (Sentiment Adjusted)'])
                     self.plot_widget.plot(plot_timestamps, vals,
-                                        pen=pg.mkPen(color='#00FF88', width=4), # Green/Gold for main
+                                        pen=pg.mkPen(color='#7FFFD4', width=4), # Aquamarine for sentiment-adjusted average
                                         name='Sentiment Adjusted',
-                                        shadowPen=pg.mkPen(color='#00FF88', width=8, alpha=50))
+                                        shadowPen=pg.mkPen(color='#7FFFD4', width=8, alpha=50))
             
             self.plot_widget.setTitle(f"{self.ticker} Price Analysis", color='w', size='14pt')
             
@@ -1047,133 +1068,120 @@ class MainWindow(QMainWindow):
             self.run_btn.setText("🚀 Run Predictions")
             self.run_btn.setEnabled(True)
 
-    def send_chat_message(self, preset_message=None):
-        if not self.llm_engine:
-            self.append_chat("🤖", "AI loading...")
+    def send_chat_message(self):
+        """Handle chat input and provide analytics insights using LLM."""
+        if not hasattr(self, 'llm_engine') or self.llm_engine is None:
+            self.chat_history.append("\n🤖: LLM is still loading. Please wait...")
             return
         
-        message = preset_message if preset_message else self.chat_input.text().strip()
-        if not message:
+        user_message = self.chat_input.text().strip()
+        if not user_message:
             return
         
+        # Display user message
+        self.chat_history.append(f"\n👤 You: {user_message}")
         self.chat_input.clear()
-        self.append_chat("👤", message)
-        self.append_chat("🤖", "Thinking...")
         
-        context = f"Stock: {self.ticker}\n"
-        if not self.df.empty:
-            context += f"Current Price: ${self.df['Close'].iloc[-1]:.2f}\n"
-            
-        # Add News Context
-        if self.news:
-            context += "\nRecent News:\n"
-            for n in self.news[:3]: # Top 3 articles
-                context += f"- {n['title']} ({n['publisher']})\n"
-                
-        # Add Prediction Context
-        if self.predictions:
-            context += "\nModel Predictions:\n"
-            if 'ENSEMBLE (Sentiment Adjusted)' in self.predictions:
-                preds = self.predictions['ENSEMBLE (Sentiment Adjusted)']
-                context += f"- Sentiment Adjusted Forecast (Next {len(preds)} days): Starts ${preds[0]:.2f}, Ends ${preds[-1]:.2f}\n"
-            elif 'ENSEMBLE (Technical)' in self.predictions:
-                preds = self.predictions['ENSEMBLE (Technical)']
-                context += f"- Technical Forecast: Ends ${preds[-1]:.2f}\n"
+        # Build context from current data
+        context = self._build_analytics_context()
         
-        prompt = f"{context}\nUser Request: {message}\n\nResponse (if action needed, provide JSON):"
+        # Create analytics-focused prompt
+        prompt = f"""You are a financial analytics assistant. Provide clear, concise analysis based on the data below.
+
+{context}
+
+User Question: {user_message}
+
+Provide your analysis with reasoning. Be specific and reference the data."""
         
+        # Show thinking indicator
+        self.chat_history.append("\n🤖 AI: Analyzing...")
+        QApplication.processEvents()
+        
+        # Run AI in background thread
         self.ai_thread = AIThread(self.llm_engine, prompt)
-        self.ai_thread.analysis_ready.connect(self.display_ai_response)
+        self.ai_thread.analysis_ready.connect(self.on_ai_response)
         self.ai_thread.start()
     
-    def append_chat(self, sender, message):
-        current = self.chat_history.toPlainText()
-        self.chat_history.setText(f"{current}\n{sender}: {message}\n")
-        self.chat_history.verticalScrollBar().setValue(
-            self.chat_history.verticalScrollBar().maximum())
+    def _build_analytics_context(self) -> str:
+        """Build context string from current stock data."""
+        context = f"**Stock:** {self.ticker}\n"
+        
+        # Price data
+        if not self.df.empty:
+            current_price = self.df['Close'].iloc[-1]
+            high = self.df['High'].max()
+            low = self.df['Low'].min()
+            context += f"**Current Price:** ${current_price:.2f}\n"
+            context += f"**52-Week Range:** ${low:.2f} - ${high:.2f}\n"
+        
+        # News sentiment
+        if self.news:
+            try:
+                sentiment_score = self.sentiment_analyzer.analyze_news(self.news)
+                sentiment_label = "Bullish" if sentiment_score > 0.05 else "Bearish" if sentiment_score < -0.05 else "Neutral"
+                context += f"**News Sentiment:** {sentiment_label} ({sentiment_score:.2f})\n"
+                context += f"**Recent Headlines:**\n"
+                for n in self.news[:3]:
+                    context += f"  - {n['title']} ({n['publisher']})\n"
+            except:
+                pass
+        
+        # Risk metrics
+        if not self.df.empty:
+            try:
+                risk_metrics = self.quant_analyzer.calculate_risk_metrics(self.df)
+                context += f"\n**Risk Metrics:**\n"
+                for key, value in risk_metrics.items():
+                    context += f"  - {key}: {value}\n"
+            except:
+                pass
+        
+        # Predictions
+        if self.predictions:
+            context += f"\n**Model Predictions:**\n"
+            if 'ENSEMBLE (Sentiment Adjusted)' in self.predictions:
+                preds = self.predictions['ENSEMBLE (Sentiment Adjusted)']
+                context += f"  - Sentiment-Adjusted Forecast: ${preds[0]:.2f} → ${preds[-1]:.2f} ({len(preds)} days)\n"
+            elif 'ENSEMBLE (Technical)' in self.predictions:
+                preds = self.predictions['ENSEMBLE (Technical)']
+                context += f"  - Technical Forecast: ${preds[0]:.2f} → ${preds[-1]:.2f}\n"
+        
+        return context
     
-    def display_ai_response(self, response):
+    def on_ai_response(self, response: str):
+        """Handle AI response and display it with reasoning."""
+        print(f"DEBUG: Received AI response: {response[:100]}...")  # Debug log
+        
+        # Remove "Analyzing..." message
         text = self.chat_history.toPlainText()
         lines = text.split('\n')
-        if lines and "Thinking..." in lines[-2]:
-            lines = lines[:-2]
+        if lines and "Analyzing..." in lines[-1]:
+            lines = lines[:-1]
             self.chat_history.setText('\n'.join(lines))
         
-        # Robust JSON Extraction
-        import json
+        # Parse thinking tags if present (DeepSeek-R1 style)
         import re
+        thinking_match = re.search(r'<think>(.*?)</think>', response, re.DOTALL)
         
-        commands_to_execute = []
-        
-        # Strategy 1: Extract from Markdown Code Blocks
-        code_blocks = re.findall(r'```json\s*(.*?)\s*```', response, re.DOTALL)
-        for block in code_blocks:
-            try:
-                parsed = json.loads(block)
-                if isinstance(parsed, list):
-                    commands_to_execute.extend(parsed)
-                elif isinstance(parsed, dict):
-                    commands_to_execute.append(parsed)
-            except json.JSONDecodeError:
-                # If block isn't valid JSON, try to find objects inside it
-                objs = re.findall(r'(\{.*?\})', block, re.DOTALL)
-                for obj_str in objs:
-                    try:
-                        cmd = json.loads(obj_str)
-                        commands_to_execute.append(cmd)
-                    except: pass
-
-        # Strategy 2: If no code blocks, look for raw JSON objects in text
-        if not commands_to_execute:
-             raw_matches = re.finditer(r'(\{.*?\"tool\":.*?\})', response, re.DOTALL)
-             for match in raw_matches:
-                 try:
-                     cmd = json.loads(match.group(1))
-                     commands_to_execute.append(cmd)
-                 except: pass
-
-        executed_any = False
-        for command in commands_to_execute:
-            try:
-                tool = command.get("tool")
-                params = command.get("params", {})
-                
-                self.append_chat("🤖", f"Executing: {tool}...")
-                executed_any = True
-                
-                if tool == "load_ticker":
-                    symbol = params.get("symbol")
-                    if symbol:
-                        self.ticker_input.setText(symbol)
-                        self.load_data()
-                        self.append_chat("🤖", f"Loaded data for {symbol}.")
-                        
-                elif tool == "run_predictions":
-                    self.run_predictions()
-                    self.append_chat("🤖", "Predictions generated.")
-                    
-                elif tool == "set_forecast_days":
-                    days = int(params.get("days", 30))
-                    self.days_slider.setValue(days)
-                    self.append_chat("🤖", f"Forecast horizon set to {days} days.")
-                    
-                elif tool == "show_chart_indicator":
-                    ind = params.get("indicator")
-                    if ind == "SMA": self.chk_sma.setChecked(not self.chk_sma.isChecked())
-                    elif ind == "Bollinger": self.chk_bb.setChecked(not self.chk_bb.isChecked())
-                    elif ind == "Ichimoku": self.chk_ichimoku.setChecked(not self.chk_ichimoku.isChecked())
-                    elif ind == "Candle": self.chk_candle.setChecked(not self.chk_candle.isChecked())
-                    self.update_chart()
-                    self.append_chat("🤖", f"Toggled indicator: {ind}")
-                    
-            except Exception as e:
-                self.append_chat("🤖", f"Tool execution failed: {e}")
-
-        if not executed_any:
-            self.append_chat("🤖", response)
+        if thinking_match:
+            thinking = thinking_match.group(1).strip()
+            final_response = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL).strip()
+            
+            # Show thinking process in a subtle way
+            self.chat_history.append(f"\n💭 Reasoning:\n{thinking[:200]}..." if len(thinking) > 200 else f"\n💭 Reasoning:\n{thinking}")
+            self.chat_history.append(f"\n🤖 AI:\n{final_response}\n")
         else:
-            # If we executed commands, we don't show the raw JSON response
-            pass
+            # No thinking tags, just show response
+            print(f"DEBUG: No thinking tags found, showing full response")  # Debug log
+            self.chat_history.append(f"\n🤖 AI:\n{response}\n")
+        
+        # Auto-scroll to bottom
+        self.chat_history.verticalScrollBar().setValue(
+            self.chat_history.verticalScrollBar().maximum()
+        )
+
+
 class SplashScreen(QSplashScreen):
     def __init__(self):
         super().__init__()
@@ -1217,7 +1225,7 @@ if __name__ == "__main__":
         app.processEvents()
     
     window = MainWindow()
-    window.show()
+    window.showMaximized()  # Start maximized
     
     splash.finish(window)
     
