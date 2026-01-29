@@ -36,3 +36,23 @@ class SentimentAnalyzer:
         """
         scores = self.sia.polarity_scores(text)
         return scores['compound']
+    
+    def analyze_news(self, news_list: List[Dict]) -> float:
+        """
+        Analyze sentiment of a list of news articles.
+        
+        Args:
+            news_list: List of news dictionaries with 'title' key
+        
+        Returns:
+            Average compound sentiment score
+        """
+        if not news_list:
+            return 0.0
+        
+        scores = [self.analyze(article.get('title', '')) for article in news_list]
+        return sum(scores) / len(scores) if scores else 0.0
+
+
+# Backward compatibility alias for existing app.py
+SentimentEngine = SentimentAnalyzer

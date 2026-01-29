@@ -7,11 +7,73 @@ from pathlib import Path
 # Ensure we can import from src if needed, but we'll try to keep this self-contained
 # or assume run from project root.
 
+
 def get_model_path():
     # DeepSeek-R1-Distill-Qwen-1.5B - Optimized for reasoning and financial analytics
     # Download from: https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF
     # Recommended quantization: Q6_K for quality or Q4_K_M for performance
     return Path("models") / "DeepSeek-R1-Distill-Qwen-1.5B-Q6_K.gguf"
+
+def download_model_if_needed():
+    """
+    Download the model from Hugging Face if it doesn't exist locally.
+    Returns the path to the model file.
+    """
+    model_path = get_model_path()
+    
+    # Check if model already exists
+    if model_path.exists():
+        print(f"Model found at {model_path}", file=sys.stderr)
+        return model_path
+    
+    # Model doesn't exist, download it
+    print("=" * 60, file=sys.stderr)
+    print("DeepSeek-R1 model not found. Downloading automatically...", file=sys.stderr)
+    print("This is a one-time download (~1.4GB for Q6_K quantization)", file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
+    
+    try:
+        from huggingface_hub import hf_hub_download
+        
+        # Create models directory if it doesn't exist
+        model_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Download the model
+        downloaded_path = hf_hub_download(
+            repo_id="bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF",
+            filename="DeepSeek-R1-Distill-Qwen-1.5B-Q6_K.gguf",
+            local_dir=model_path.parent,
+            local_dir_use_symlinks=False
+        )
+        
+        print(f"✓ Model downloaded successfully to {model_path}", file=sys.stderr)
+        return Path(downloaded_path)
+        
+    except ImportError:
+        error_msg = """
+ERROR: huggingface_hub is not installed.
+Please install it with: pip install huggingface_hub
+
+Or download the model manually from:
+https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF
+
+Place the file at: {model_path}
+""".format(model_path=model_path)
+        print(error_msg, file=sys.stderr)
+        return None
+        
+    except Exception as e:
+        error_msg = f"""
+ERROR: Failed to download model: {e}
+
+Please download manually from:
+https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF
+
+Recommended file: DeepSeek-R1-Distill-Qwen-1.5B-Q6_K.gguf
+Place it at: {model_path}
+"""
+        print(error_msg, file=sys.stderr)
+        return None
 
 def get_optimal_threads():
     try:
@@ -21,9 +83,11 @@ def get_optimal_threads():
         return 4
 
 def load_model_and_infer(prompt):
-    model_path = get_model_path()
-    if not model_path.exists():
-        return {"error": f"Model not found at {model_path}"}
+    # Download model if needed
+    model_path = download_model_if_needed()
+    
+    if model_path is None or not model_path.exists():
+        return {"error": f"Model not found and automatic download failed. See instructions above."}
 
     # Strategies
     strategies = [

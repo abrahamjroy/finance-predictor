@@ -610,8 +610,6 @@ class MainWindow(QMainWindow):
         content_layout.addWidget(self.sidebar_tabs)
         content_container_layout.addLayout(content_layout)
         layout.addWidget(content_container, stretch=1)
-        content_container_layout.addLayout(content_layout)
-        layout.addWidget(content_container, stretch=1)
         
         # Bottom Ticker
         self.bottom_ticker = TickerTape()

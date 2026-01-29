@@ -300,7 +300,13 @@ Detailed documentation: [MCP_GUIDE.md](MCP_GUIDE.md)
 
 ### LLM Configuration
 
-Place DeepSeek-R1-Distill-Qwen-1.5B model file in `models/` directory:
+**Automatic Download (Recommended):**
+
+The model will be downloaded automatically on first run if not present. No manual setup required!
+
+**Manual Download (Optional):**
+
+If you prefer to download manually, place DeepSeek-R1-Distill-Qwen-1.5B model file in `models/` directory:
 ```
 models/DeepSeek-R1-Distill-Qwen-1.5B-Q6_K.gguf
 ```
@@ -308,7 +314,7 @@ models/DeepSeek-R1-Distill-Qwen-1.5B-Q6_K.gguf
 **Download:** [Hugging Face - bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF](https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF)
 
 Recommended quantizations:
-- **Q6_K** (1.4GB) - Best quality for financial analysis
+- **Q6_K** (1.4GB) - Best quality for financial analysis ⭐ Default
 - **Q4_K_M** (990MB) - Good balance of speed and quality
 - **Q4_0** (880MB) - Fastest, lowest quality
 
