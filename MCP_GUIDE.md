@@ -187,7 +187,7 @@ Calculate technical analysis indicators.
 
 ### 🤖 `run_ai_analysis_tool`
 
-Run local Granite 4.0 LLM analysis on a stock.
+Run local DeepSeek-R1-Distill-Qwen-1.5B LLM analysis on a stock.
 
 **Parameters:**
 - `ticker` (str, required): Stock ticker symbol

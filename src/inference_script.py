@@ -8,8 +8,10 @@ from pathlib import Path
 # or assume run from project root.
 
 def get_model_path():
-    # Assuming script is run from project root
-    return Path("models") / "granite-4.0-h-tiny-adaptive-reasoning.i1-IQ4_XS.gguf"
+    # DeepSeek-R1-Distill-Qwen-1.5B - Optimized for reasoning and financial analytics
+    # Download from: https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF
+    # Recommended quantization: Q6_K for quality or Q4_K_M for performance
+    return Path("models") / "DeepSeek-R1-Distill-Qwen-1.5B-Q6_K.gguf"
 
 def get_optimal_threads():
     try:
@@ -48,10 +50,9 @@ def load_model_and_infer(prompt):
             model = Llama(
                 model_path=str(model_path),
                 n_gpu_layers=layers,
-                n_ctx=16384, 
+                n_ctx=16384,  # DeepSeek-R1 supports up to 131K context, 16K is safe
                 n_threads=get_optimal_threads(),
-                verbose=False, 
-                flash_attn=True # Enable Flash Attention for Granite
+                verbose=False
             )
             used_strategy = mode
             break # Success

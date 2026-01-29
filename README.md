@@ -36,7 +36,7 @@ A production-ready financial forecasting platform combining classical statistica
 - **Hybrid Architecture**: Combines 10+ forecasting algorithms spanning statistical (ARIMA, Holt-Winters), ML (XGBoost, Random Forest), and DL (CNN-GAF, LSTM) approaches
 - **Quantitative Rigor**: Institutional-grade risk metrics including VaR, CVaR, Sharpe Ratio, and Kelly Criterion
 - **Native Performance**: Hardware-accelerated PyQt6 UI with real-time charting via PyQtGraph
-- **Privacy-First AI**: Local LLM inference (Granite 4.0) - all analysis performed on-device
+- **Privacy-First AI**: Local LLM inference (DeepSeek-R1-Distill-Qwen-1.5B) - all analysis performed on-device
 
 ## Architecture & Features
 
@@ -135,8 +135,8 @@ Multi-strategy prediction pipeline with 10+ algorithm implementations:
 
 ### AI Integration
 
-**Local LLM**: Granite 4.0 Reasoning (IBM)  
-**Inference**: llama-cpp-python with GGUF quantization (INT4)  
+**Local LLM**: DeepSeek-R1-Distill-Qwen-1.5B  
+**Inference**: llama-cpp-python with GGUF quantization (Q6_K/Q4_K_M)  
 **Architecture**: Isolated subprocess to prevent DLL conflicts
 
 **Capabilities:**
@@ -268,7 +268,7 @@ Add server configuration from `mcp_config.json`.
 - `calculate_risk_metrics` - VaR, CVaR, Sharpe, Kelly computation
 - `detect_candlestick_patterns` - Technical pattern recognition
 - `get_technical_indicators` - RSI, MACD, Bollinger, ADX calculation
-- `run_ai_analysis` - Local LLM inference (Granite 4.0)
+- `run_ai_analysis` - Local LLM inference (DeepSeek-R1-Distill-Qwen-1.5B)
 - `get_correlation_matrix` - Multi-asset correlation analysis
 - `get_market_regime` - ADX-based regime classification
 
@@ -300,10 +300,17 @@ Detailed documentation: [MCP_GUIDE.md](MCP_GUIDE.md)
 
 ### LLM Configuration
 
-Place Granite 4.0 model file in `models/` directory:
+Place DeepSeek-R1-Distill-Qwen-1.5B model file in `models/` directory:
 ```
-models/granite-4.0-h-tiny-adaptive-reasoning.i1-IQ4_XS.gguf
+models/DeepSeek-R1-Distill-Qwen-1.5B-Q6_K.gguf
 ```
+
+**Download:** [Hugging Face - bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF](https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF)
+
+Recommended quantizations:
+- **Q6_K** (1.4GB) - Best quality for financial analysis
+- **Q4_K_M** (990MB) - Good balance of speed and quality
+- **Q4_0** (880MB) - Fastest, lowest quality
 
 ## Project Structure
 
@@ -318,7 +325,7 @@ finance-predictor/
 │   ├── cv_forecasting.py       # CNN-GAF computer vision forecaster
 │   ├── quant_analysis.py       # Risk metrics and pattern detection
 │   ├── sentiment.py            # VADER sentiment analyzer
-│   ├── llm_engine.py           # Granite 4.0 LLM interface
+│   ├── llm_engine.py           # DeepSeek-R1 LLM interface
 │   ├── inference_script.py     # Isolated LLM inference subprocess
 │   ├── mcp_server.py           # FastMCP server implementation
 │   ├── mcp_tools.py            # MCP tool definitions
