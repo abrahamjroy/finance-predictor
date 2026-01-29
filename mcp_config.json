@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "finance-predictor": {
+      "command": "python",
+      "args": ["-m", "src.mcp_server"],
+      "cwd": "c:/Users/royka/Documents/Projects/finance-predictor",
+      "env": {}
+    }
+  }
+}

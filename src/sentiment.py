@@ -5,31 +5,34 @@ from .utils import get_logger
 
 logger = get_logger(__name__)
 
-class SentimentEngine:
+# Download VADER lexicon if not already downloaded
+try:
+    nltk.data.find('sentiment/vader_lexicon.zip')
+except LookupError:
+    logger.info("Downloading VADER lexicon...")
+    nltk.download('vader_lexicon', quiet=True)
+
+
+class SentimentAnalyzer:
     """
-    Handles sentiment analysis of text data.
+    Sentiment Analysis using VADER (Valence Aware Dictionary and sEntiment Reasoner).
     """
     
     def __init__(self):
-        try:
-            nltk.data.find('sentiment/vader_lexicon.zip')
-        except LookupError:
-            nltk.download('vader_lexicon', quiet=True)
-            
         self.sia = SentimentIntensityAnalyzer()
-
-    def analyze_news(self, news_items: List[Dict]) -> float:
+    
+    def analyze(self, text: str) -> float:
         """
-        Returns an average compound sentiment score (-1 to 1) for a list of news items.
+        Analyze sentiment of a text string.
+        
+        Args:
+            text: Text to analyze (e.g., news headline)
+        
+        Returns:
+            Compound sentiment score (-1 to +1)
+            Positive: > 0.05
+            Neutral: -0.05 to 0.05
+            Negative: < -0.05
         """
-        if not news_items:
-            return 0.0
-            
-        scores = []
-        for item in news_items:
-            title = item.get('title', '')
-            if title:
-                score = self.sia.polarity_scores(title)['compound']
-                scores.append(score)
-                
-        return sum(scores) / len(scores) if scores else 0.0
+        scores = self.sia.polarity_scores(text)
+        return scores['compound']
