@@ -1,10 +1,10 @@
 <div align="center">
   <img src="assets/logo.png" alt="Finance Predictor Logo" width="120" />
-  <h1>Finance Predictor Pro (Native UI Edition)</h1>
+  <h1>Finance Predictor Pro</h1>
   
   <p>
-    <b>Next-Gen Financial Forecasting & Analysis</b><br>
-    <i>Powered by PyQt6, XGBoost, and Local LLMs</i>
+    <b>Institutional-Grade Financial Forecasting & Analysis Platform</b><br>
+    <i>Native Desktop Application | Model Context Protocol Compliant</i>
   </p>
   
   <!-- Badges -->
@@ -27,64 +27,127 @@
 
 ---
 
-## 🌟 Highlights
+## Overview
 
-- **🔌 MCP Integration**: Full Model Context Protocol support - use with Claude Desktop, ChatGPT, and other AI assistants
-- **🖥️ Native Performance**: Hardware-accelerated PyQt6 desktop UI
-- **🤖 AI-Powered**: Local Granite 4.0 LLM for advanced market analysis
-- **📊 10+ Forecasting Models**: From statistical methods to deep learning (CNN-GAF)
-- **⚡ Real-Time Data**: Live stock, crypto, and forex data via yfinance
-- **📈 Advanced Analytics**: Risk metrics, sentiment analysis, pattern recognition
+A production-ready financial forecasting platform combining classical statistical methods, machine learning, and deep learning techniques with institutional-grade risk analytics. Built with PyQt6 for native desktop performance and featuring complete Model Context Protocol (MCP) integration for programmatic access via AI assistants.
 
-## 🚀 Features
+**Key Differentiators:**
+- **MCP Compliance**: Industry-first full implementation of the Model Context Protocol, enabling seamless integration with Claude Desktop, ChatGPT, and other MCP-compatible clients
+- **Hybrid Architecture**: Combines 10+ forecasting algorithms spanning statistical (ARIMA, Holt-Winters), ML (XGBoost, Random Forest), and DL (CNN-GAF, LSTM) approaches
+- **Quantitative Rigor**: Institutional-grade risk metrics including VaR, CVaR, Sharpe Ratio, and Kelly Criterion
+- **Native Performance**: Hardware-accelerated PyQt6 UI with real-time charting via PyQtGraph
+- **Privacy-First AI**: Local LLM inference (Granite 4.0) - all analysis performed on-device
 
-### MCP Integration (NEW!)
+## Architecture & Features
 
-- **🔌 Model Context Protocol Compliant**: Full MCP server implementation with 9 tools, 4 resources, and 4 prompt templates
-- **🤝 AI Assistant Ready**: Works with Claude Desktop, ChatGPT, and any MCP-compatible client
-- **🛠️ Programmatic Access**: AI assistants can fetch data, run predictions, analyze sentiment, calculate risk metrics, and more
-- **📋 Workflow Templates**: Pre-built prompts for market analysis, risk assessment, investment recommendations, and portfolio optimization
-- **🔄 Real-Time Resources**: Live data feeds accessible via standardized URIs
+### Model Context Protocol (MCP) Server
+
+Complete implementation of the Model Context Protocol specification, exposing all application capabilities via a standardized JSON-RPC interface.
+
+**Implementation Details:**
+- **Server Framework**: Built on FastMCP SDK with automatic schema generation
+- **Transport Layer**: stdio-based communication for seamless integration with MCP clients
+- **Tool Registry**: 9 registered tools with Pydantic schema validation
+- **Resource Handlers**: 4 dynamic resources with 5-minute TTL caching
+- **Prompt Templates**: 4 pre-configured workflow templates for structured analysis
+- **Type Safety**: Full type validation using Pydantic v2 models
+
+**Available Tools:**
+- `fetch_stock_data` - Historical OHLCV retrieval with configurable periods/intervals
+- `run_predictions` - Multi-model forecasting pipeline execution
+- `analyze_sentiment` - VADER-based sentiment analysis on curated news sources
+- `calculate_risk_metrics` - VaR, CVaR, volatility, and Sharpe ratio computation
+- `detect_candlestick_patterns` - Technical pattern recognition engine
+- `get_technical_indicators` - Real-time indicator calculation (RSI, MACD, Bollinger, etc.)
+- `run_ai_analysis` - Local LLM inference for qualitative analysis
+- `get_correlation_matrix` - Multi-asset correlation matrix generation
+- `get_market_regime` - ADX-based regime classification
 
 ### Desktop Application
 
-- **Native Performance**: Built with PyQt6 for responsive, hardware-accelerated experience
-- **Modern Tabbed UI**: Sleek interface organized into **Dashboard**, **Analysis**, and **Charting** tabs
-- **Custom Controls**: macOS-style window controls, Material Design 3 components
-- **Live Ticker Tapes**: Scrolling tickers for 50+ major stocks and real-time news headlines
+**UI Framework**: PyQt6 with hardware-accelerated rendering  
+**Charting Engine**: PyQtGraph for real-time, high-performance plotting  
+**Design System**: Material Design 3 components with custom theme engine
 
-### Forecasting & Prediction
+**Architecture:**
+- Multi-threaded design with separate worker threads for data fetching and model inference
+- Event-driven architecture using Qt's signal/slot mechanism
+- Modular tab-based interface (Dashboard, Analysis, Charting)
+- Custom window controls with platform-specific styling
 
-- **10+ Algorithms**: 
-  - **Statistical**: SMA, EMA, ARIMA, Holt-Winters
-  - **Machine Learning**: Linear Regression, Random Forest (optimized), XGBoost (optimized), SVR
-  - **Advanced**: CNN-GAF (Computer Vision), Prophet, Kalman Filter, Monte Carlo, LSTM
-- **Sentiment-Adjusted Forecasts**: Bayesian-inspired drift adjustment using news sentiment
-- **Ensemble Methods**: Stacked meta-models combining top performers
+### Forecasting Engine
 
-### Technical Analysis
+Multi-strategy prediction pipeline with 10+ algorithm implementations:
 
-- **Professional Charting**: PyQtGraph-powered charts with technical overlays
-- **Indicators**: Ichimoku Cloud, Bollinger Bands, SMA, Stochastic, ATR, RSI, MACD, ADX
-- **Pattern Recognition**: Auto-detects Doji, Hammer, Shooting Star, Engulfing, Morning/Evening Star
-- **Correlation Matrix**: Live heatmap showing asset correlations against benchmarks (SPY, BTC, GLD)
+**Statistical Methods:**
+- Simple/Exponential Moving Averages (SMA/EMA)
+- AutoRegressive Integrated Moving Average (ARIMA)
+- Holt-Winters Exponential Smoothing
+- Kalman Filtering
 
-### Risk Management
+**Machine Learning:**
+- Linear Regression (baseline)
+- Random Forest Regressor (grid-search optimized)
+- XGBoost (hyperparameter-tuned for high volatility)
+- Support Vector Regression (RBF kernel)
 
-- **Quantitative Metrics**:
-  - Value at Risk (VaR 95%)
-  - Conditional VaR (CVaR / Expected Shortfall)
-  - Annualized Volatility
-  - Sharpe Ratio
-  - Kelly Criterion (optimal position sizing)
-- **Market Regime Detection**: Automatically detects Trending vs Ranging markets using ADX
+**Deep Learning:**
+- CNN-GAF: Convolutional Neural Network with Gramian Angular Field transformations
+- FB Prophet: Time series forecaster with trend/seasonality decomposition
+- LSTM: Long Short-Term Memory networks
+- Monte Carlo simulation for probabilistic forecasting
 
-### AI & Intelligence
+**Novel Techniques:**
+- Sentiment-adjusted drift correction using Bayesian inference
+- Ensemble stacking with meta-learner
+- Cross-validation with time series splits
 
-- **Agentic AI Copilot**: Autonomous AI agent that can control the application via natural language
-- **Advanced Reasoning**: Powered by Granite 4.0 Reasoning (IBM) for deep financial analysis
-- **Sentiment Analysis**: VADER-based analysis of 15+ reliable news sources (Reuters, Bloomberg, CNBC, WSJ)
-- **MCP Tools Integration**: AI assistants can orchestrate complex multi-step analyses
+### Technical Analysis Suite
+
+**Indicators** (implemented via `ta` library + custom implementations):
+- Momentum: RSI, MACD, Stochastic Oscillator
+- Volatility: Bollinger Bands, ATR, Keltner Channels
+- Trend: Ichimoku Cloud, ADX, Parabolic SAR
+- Volume: OBV, CMF, VWAP
+
+**Pattern Recognition:**
+- Single-candle patterns: Doji, Hammer, Shooting Star
+- Multi-candle patterns: Engulfing, Morning/Evening Star
+- Real-time detection with configurable sensitivity
+
+**Correlation Analysis:**
+- Pearson correlation matrix for multi-asset portfolios
+- Benchmark comparison (SPY, BTC, GLD)
+- Live heatmap visualization
+
+### Risk Analytics
+
+**Metrics Implementation:**
+- **Value at Risk (VaR)**: Historical simulation method at 95% confidence
+- **Conditional VaR (CVaR)**: Expected shortfall beyond VaR threshold
+- **Volatility**: Annualized standard deviation with exponential weighting
+- **Sharpe Ratio**: Risk-adjusted return calculation (assuming risk-free rate)
+- **Kelly Criterion**: Optimal position sizing based on win probability and payoff ratio
+
+**Market Regime Detection:**
+- ADX-based classification (Trending: ADX > 25, Ranging: ADX < 25)
+- Regime-adaptive strategy recommendations
+
+### AI Integration
+
+**Local LLM**: Granite 4.0 Reasoning (IBM)  
+**Inference**: llama-cpp-python with GGUF quantization (INT4)  
+**Architecture**: Isolated subprocess to prevent DLL conflicts
+
+**Capabilities:**
+- Qualitative market analysis and narrative generation
+- Strategy formulation based on quantitative inputs
+- Natural language interface for application control (agentic mode)
+
+**Sentiment Analysis:**
+- VADER (Valence Aware Dictionary and sEntiment Reasoner)
+- Curated news sources: Reuters, Bloomberg, CNBC, WSJ, Financial Times, Forbes, MarketWatch
+- Aggregate sentiment scoring with source reliability weighting
 
 ## Interface Gallery
 
@@ -103,203 +166,250 @@
 
 ---
 
-## 📊 Capabilities at a Glance
+## Technical Specifications
 
-| Category | Count | Highlights |
-|----------|-------|------------|
-| **MCP Tools** | 9 | Stock data, predictions, sentiment, risk, patterns, indicators, AI analysis, correlation, regime |
-| **Forecasting Models** | 10+ | XGBoost, Random Forest, ARIMA, CNN-GAF, Prophet, Kalman, Monte Carlo, LSTM |
-| **Technical Indicators** | 7+ | RSI, MACD, Bollinger Bands, ADX, ATR, Stochastic, Ichimoku |
-| **Risk Metrics** | 5 | VaR (95%), CVaR, Volatility, Sharpe Ratio, Kelly Criterion |
-| **Candlestick Patterns** | 5 | Doji, Hammer, Shooting Star, Engulfing, Morning/Evening Star |
-| **MCP Resources** | 4 | Historical data, company info, news feed, metrics |
-| **MCP Prompts** | 4 | Market analysis, risk assessment, investment recs, portfolio optimization |
-| **News Sources** | 15+ | Reuters, Bloomberg, CNBC, WSJ, Financial Times, Forbes, MarketWatch |
+| Component | Implementation | Details |
+|-----------|----------------|---------|
+| **MCP Tools** | 9 | Stock data API, multi-model forecaster, sentiment analyzer, risk calculator, pattern detector, indicator engine, LLM interface, correlation analyzer, regime classifier |
+| **Forecasting Models** | 10+ | XGBoost, Random Forest, ARIMA, CNN-GAF, Prophet, Kalman, Monte Carlo, LSTM, Holt-Winters, SVR |
+| **Technical Indicators** | 7+ | RSI, MACD, Bollinger Bands, ADX, ATR, Stochastic Oscillator, Ichimoku Cloud |
+| **Risk Metrics** | 5 | VaR (95%), CVaR, Annualized Volatility, Sharpe Ratio, Kelly Criterion |
+| **Pattern Recognition** | 5 | Doji, Hammer, Shooting Star, Engulfing (bullish/bearish), Morning/Evening Star |
+| **MCP Resources** | 4 | Historical OHLCV, company metadata, news aggregation, risk metrics |
+| **MCP Prompts** | 4 | Market analysis, risk assessment, investment recommendations, portfolio optimization |
+| **Data Sources** | 15+ | Reuters, Bloomberg, CNBC, WSJ, Financial Times, Forbes, MarketWatch, etc. |
 
 ## Installation
 
-### Requirements
-- Python 3.10+
-- CUDA-capable GPU (optional, but recommended for AI features)
+### Prerequisites
+- **Python**: 3.10 or higher
+- **CUDA**: Optional, but recommended for deep learning models (CNN-GAF, LSTM)
+- **Memory**: Minimum 8GB RAM; 16GB recommended for concurrent model execution
 
-### Setup
+### Installation Steps
+
 ```bash
-# Clone the repository
+# Clone repository
 git clone https://github.com/YOUR_USERNAME/finance-predictor.git
 cd finance-predictor
 
-# Switch to the native-ui branch
+# Switch to native-ui branch
 git checkout native-ui
 
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
 
-# Download NLTK data
+# Download NLTK VADER lexicon
 python -c "import nltk; nltk.download('vader_lexicon')"
 ```
 
 ## Usage
 
-### Run Application
+### Desktop Application
+
 ```bash
 # Windows
 run_app.bat
 
-# Or manually
+# Cross-platform
 python app.py
 ```
 
-### Headless Mode (WIP)
-Run in terminal without GUI:
+### Headless Mode
+
+For CLI-based execution without GUI:
+
 ```bash
 python app.py --headless
 ```
 
-## MCP Integration
+### MCP Server
 
-Finance Predictor is **Model Context Protocol (MCP) compliant**, enabling AI assistants like Claude Desktop, ChatGPT, and other MCP clients to access all core features programmatically.
+To expose application capabilities via Model Context Protocol:
 
-### Available Capabilities
+```bash
+# Start MCP server
+python -m src.mcp_server
+```
 
-**🔧 Tools** (9 actionable functions):
-- `fetch_stock_data` - Fetch historical OHLCV data
-- `run_predictions` - Execute 10+ forecasting models (XGBoost, Random Forest, ARIMA, CNN-GAF, etc.)
-- `analyze_sentiment` - News sentiment analysis with VADER
-- `calculate_risk_metrics` - VaR, CVaR, Sharpe Ratio, Kelly Criterion
-- `detect_candlestick_patterns` - Doji, Hammer, Engulfing patterns
-- `get_technical_indicators` - RSI, MACD, Bollinger Bands, ADX
-- `run_ai_analysis` - Local Granite 4.0 LLM analysis
+## Model Context Protocol Integration
+
+Complete MCP specification implementation enabling programmatic access by AI assistants and automation tools.
+
+### Server Configuration
+
+**1. Install MCP dependencies:**
+```bash
+pip install fastmcp mcp pydantic
+```
+
+**2. Launch MCP server:**
+```bash
+python -m src.mcp_server
+```
+
+**3. Configure MCP client:**
+
+For Claude Desktop, edit configuration file:
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+Add server configuration from `mcp_config.json`.
+
+**4. Restart client** - Finance Predictor tools will be registered and available.
+
+### API Endpoints
+
+**Tools (9):**
+- `fetch_stock_data` - OHLCV retrieval with period/interval configuration
+- `run_predictions` - Multi-model forecasting pipeline
+- `analyze_sentiment` - VADER-based news sentiment analysis
+- `calculate_risk_metrics` - VaR, CVaR, Sharpe, Kelly computation
+- `detect_candlestick_patterns` - Technical pattern recognition
+- `get_technical_indicators` - RSI, MACD, Bollinger, ADX calculation
+- `run_ai_analysis` - Local LLM inference (Granite 4.0)
 - `get_correlation_matrix` - Multi-asset correlation analysis
-- `get_market_regime` - Trending vs Ranging detection
+- `get_market_regime` - ADX-based regime classification
 
-**📊 Resources** (5 live data feeds):
-- `stock://historical/{ticker}` - Historical price data
-- `stock://info/{ticker}` - Company metadata
-- `stock://news/{ticker}` - Recent news with sentiment
-- `stock://metrics/{ticker}` - Risk metrics and patterns
+**Resources (4):**
+- `stock://historical/{ticker}` - Historical price data (1-year daily)
+- `stock://info/{ticker}` - Company metadata and fundamentals
+- `stock://news/{ticker}` - Recent news with sentiment scores
+- `stock://metrics/{ticker}` - Risk metrics and detected patterns
 
-**💡 Prompts** (4 templates):
-- `market_analysis` - Comprehensive market analysis workflow
-- `risk_assessment` - Risk evaluation template
-- `investment_recommendation` - Buy/sell/hold recommendations
-- `portfolio_optimization` - Multi-asset portfolio optimization
+**Prompts (4):**
+- `market_analysis` - Structured 6-step market analysis workflow
+- `risk_assessment` - Comprehensive risk evaluation template
+- `investment_recommendation` - Buy/sell/hold decision framework
+- `portfolio_optimization` - Multi-asset allocation strategy
 
-### Quick Start
+### Example Queries
 
-1. **Install MCP dependencies**:
-   ```bash
-   pip install fastmcp mcp pydantic
-   ```
+```
+# Via Claude Desktop or compatible MCP client
 
-2. **Run the MCP server**:
-   ```bash
-   python -m src.mcp_server
-   ```
+"Analyze AAPL: fetch 2-year data, run XGBoost and Random Forest predictions for 30 days, analyze news sentiment, and provide investment recommendation."
 
-3. **Configure Claude Desktop** (or other MCP client):
-   
-   Copy the contents of `mcp_config.json` to your Claude Desktop configuration:
-   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - **Linux**: `~/.config/Claude/claude_desktop_config.json`
+"Compare risk profiles of TSLA vs SPY: calculate VaR, CVaR, Sharpe ratio, and correlation coefficient."
 
-4. **Restart Claude Desktop** - Finance Predictor tools will now be available!
+"Execute market_analysis prompt template for NVDA with full technical and fundamental analysis."
+```
 
-### Example Usage in Claude
+Detailed documentation: [MCP_GUIDE.md](MCP_GUIDE.md)
 
-Try these prompts in Claude Desktop after setup:
+### LLM Configuration
 
-> "Use the finance-predictor tools to analyze AAPL stock. Fetch the data, run predictions using XGBoost and Random Forest, analyze recent news sentiment, and provide a comprehensive investment recommendation."
-
-> "Calculate risk metrics for TSLA including VaR, CVaR, and Kelly Criterion. Then compare its correlation with SPY benchmark."
-
-> "Run a complete market analysis for NVDA using the market_analysis prompt template."
-
-For detailed usage examples and troubleshooting, see **[MCP_GUIDE.md](MCP_GUIDE.md)**.
-
-
-### LLM Model Setup
-Place your Granite 4.0 model file in the `models/` directory:
-- `granite-4.0-h-tiny-adaptive-reasoning.i1-IQ4_XS.gguf`
+Place Granite 4.0 model file in `models/` directory:
+```
+models/granite-4.0-h-tiny-adaptive-reasoning.i1-IQ4_XS.gguf
+```
 
 ## Project Structure
 
 ```
-finance_predictor/
-├── app.py                 # Main PyQt6 application
+finance-predictor/
+├── app.py                      # Main PyQt6 application entry point
 ├── src/
-│   ├── data_loader.py    # Data fetching logic
-│   ├── forecasting.py    # Prediction algorithms (Optimized)
-│   ├── cv_forecasting.py # Computer Vision forecasting (CNN-GAF)
-│   ├── quant_analysis.py # Risk metrics, patterns, indicators
-│   ├── sentiment.py      # Sentiment analysis
-│   ├── llm_engine.py     # LLM integration
-│   ├── inference_script.py # Isolated inference process
-│   └── utils.py          # Helper functions
-├── requirements.txt
-└── run_app.bat           # Launcher script
+│   ├── __init__.py
+│   ├── __main__.py             # MCP server CLI entry point
+│   ├── data_loader.py          # yfinance API wrapper
+│   ├── forecasting.py          # ML/statistical prediction engines
+│   ├── cv_forecasting.py       # CNN-GAF computer vision forecaster
+│   ├── quant_analysis.py       # Risk metrics and pattern detection
+│   ├── sentiment.py            # VADER sentiment analyzer
+│   ├── llm_engine.py           # Granite 4.0 LLM interface
+│   ├── inference_script.py     # Isolated LLM inference subprocess
+│   ├── mcp_server.py           # FastMCP server implementation
+│   ├── mcp_tools.py            # MCP tool definitions
+│   ├── mcp_resources.py        # MCP resource handlers
+│   └── utils.py                # Logging and directory setup
+├── requirements.txt            # Python dependencies
+├── mcp_config.json             # MCP client configuration template
+├── MCP_GUIDE.md                # MCP integration documentation
+└── run_app.bat                 # Windows launcher script
 ```
 
-## 🛠️ Technologies
+## Technology Stack
 
 ### UI & Visualization
-- **PyQt6** - Qt for Python (native desktop UI)
-- **PyQtGraph** - High-performance plotting library
+- **PyQt6** - Qt 6 for Python (native cross-platform UI framework)
+- **PyQtGraph** - High-performance scientific plotting library
 
 ### Data & APIs
-- **yfinance** (≥0.2.66) - Real-time financial data
-- **pandas** - Data manipulation
-- **numpy** (<2.0) - Numerical computing
+- **yfinance** (≥0.2.66) - Yahoo Finance API wrapper for market data
+- **pandas** - Data structures and analysis toolkit
+- **numpy** (<2.0) - Numerical computing (constrained for Prophet compatibility)
 
 ### Machine Learning & Forecasting
-- **scikit-learn** - Classical ML algorithms
-- **XGBoost** - Gradient boosting (optimized)
-- **statsmodels** - Statistical models (ARIMA)
-- **Prophet** - Facebook's time series forecaster
-- **PyTorch** - Deep learning (CNN-GAF)
-- **pyts** - Time series transformations (Gramian Angular Fields)
-- **arch** - GARCH volatility modeling
-- **pykalman** - Kalman filtering
+- **scikit-learn** - Classical ML algorithms (Random Forest, SVR, Linear Regression)
+- **XGBoost** - Gradient boosting framework (optimized with grid search)
+- **statsmodels** - Statistical models (ARIMA, GARCH)
+- **Prophet** - Facebook's time series forecasting library
+- **PyTorch** - Deep learning framework (CNN-GAF implementation)
+- **pyts** - Time series transformation library (Gramian Angular Fields)
+- **arch** - Autoregressive conditional heteroskedasticity (GARCH) models
+- **pykalman** - Kalman filtering and smoothing
 
 ### Technical Analysis
-- **ta** - Technical indicators library
+- **ta** - Technical analysis indicator library
 
 ### Natural Language Processing
-- **NLTK** - Sentiment analysis (VADER)
+- **NLTK** - Natural Language Toolkit (VADER sentiment analysis)
 
 ### AI & LLM
-- **llama-cpp-python** - Local LLM inference (Granite 4.0)
+- **llama-cpp-python** - Python bindings for llama.cpp (GGUF model inference)
 
 ### MCP (Model Context Protocol)
-- **fastmcp** (≥1.0.0) - Streamlined MCP server framework
-- **mcp** (≥0.9.0) - Official MCP SDK
-- **pydantic** (≥2.0.0) - Type validation for MCP tools
+- **fastmcp** (≥1.0.0) - High-level MCP server framework
+- **mcp** (≥0.9.0) - Official Anthropic MCP SDK
+- **pydantic** (≥2.0.0) - Data validation using Python type annotations
 
 ---
 
-## 🎯 What Makes This Unique?
+## Design Decisions
 
-1. **🔌 Full MCP Compliance**: First finance app with complete Model Context Protocol support - AI assistants can orchestrate complex multi-step analyses
-2. **🧠 Hybrid Intelligence**: Combines 10+ traditional forecasting models with cutting-edge AI (Granite 4.0) and computer vision (CNN-GAF)
-3. **📊 Institutional-Grade Risk**: VaR, CVaR, Kelly Criterion, and market regime detection - metrics used by hedge funds and quant traders
-4. **⚡ Native Performance**: PyQt6 desktop app with hardware acceleration - no slow web frameworks
-5. **🎨 Beautiful UI**: Material Design 3 components, macOS-style controls, live ticker tapes
-6. **🔒 Privacy-First**: Local LLM (Granite 4.0) - your financial data never leaves your machine
+**Why MCP Integration?**  
+Model Context Protocol standardizes how AI assistants interact with external tools. By implementing MCP, Finance Predictor becomes a first-class data source for Claude, ChatGPT, and other MCP-compatible clients, enabling complex multi-step financial analyses orchestrated by AI.
+
+**Why PyQt6 Over Web Frameworks?**  
+Native desktop applications provide:
+- Lower latency UI updates (critical for real-time charting)
+- Direct GPU access for hardware-accelerated rendering
+- No network overhead for local operations
+- Better resource management for computationally intensive models
+
+**Why Local LLM?**  
+Privacy and data sovereignty. Financial data analysis often involves sensitive information. Local inference ensures all data remains on-device while still providing advanced AI capabilities.
+
+**Why 10+ Forecasting Models?**  
+No single model dominates across all market conditions. Ensemble approach:
+- Diversifies prediction risk
+- Captures different signal types (trend, mean-reversion, volatility)
+- Enables model performance comparison
+- Supports regime-adaptive strategy selection
 
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE) for details
+
+## Contributing
+
+Contributions are welcome. Please:
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/improvement`)
+3. Commit changes (`git commit -am 'Add feature'`)
+4. Push to branch (`git push origin feature/improvement`)
+5. Open a Pull Request
 
 ## Author
 
-Built with ❤️ by **Abraham Jeevan Roy**  
-For financial analysis testing and application development
+**Abraham Jeevan Roy**  
+Financial Analysis & Application Development
 
 ---
 
 <div align="center">
-  <p><b>⭐ Star this repo if you find it useful! ⭐</b></p>
-  
   <p>
     <a href="https://github.com/YOUR_USERNAME/finance-predictor/issues">Report Bug</a> •
     <a href="https://github.com/YOUR_USERNAME/finance-predictor/issues">Request Feature</a> •
